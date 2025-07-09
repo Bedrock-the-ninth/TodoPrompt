@@ -8,12 +8,14 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder as AB,
+    CallbackQueryHandler as CQH,
     CommandHandler as CH,
     ContextTypes as CT,
     ConversationHandler as ConvoH,
     filters,
+    JobQueue as JQ,
     MessageHandler as MH,
-    JobQueue as JQ)
+    PicklePersistence as PP)
 # Helper functions
 import helpers
 
@@ -27,16 +29,43 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# >>> Main Menue Inline Keyboard >>>
+# >>> Inline Keyboard >>>
 def make_main_menu_keyboard():
     keyboard = [
         [InlineKeyboardButton("👤 View Your Profile.", callback_data="menu_view_profile")],
-        [InlineKeyboardButton("📝 View Tasks", callback_data="menu_view_tasks"), InlineKeyboardButton("➕ Add New Task", callback_data="menu_add_tasks")],
-        [InlineKeyboardButton("⚙️ Settings", callback_data="menue_settings")]
+        [InlineKeyboardButton("📝 View Tasks", callback_data="menu_view_tasks"), InlineKeyboardButton("🔔 Set Reminders", callback_data="menu_add_tasks")],
+        [InlineKeyboardButton("⚙️ Settings", callback_data="menue_settings"), InlineKeyboardButton("❌ Close Menue", callback_data="menue_settings")]
     ]
 
     return InlineKeyboardMarkup(keyboard)
-# <<< Main Menu Inline Keyboard <<<
+
+
+def make_profile_menu_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("🔙 Return to Menu", callback_data="profile_return")]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def make_tasks_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("➕ Add", callback_data="tasks_add"), InlineKeyboardButton("➖ Remove", callback_data="tasks_remove")]
+        [InlineKeyboardButton("🔙 Return to Menu", callback_data="return_button")]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def make_subtasks_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("🔙 Return to Tasks", callback_data="subtasks_return")]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+# <<< Inline Keyboard <<<
 
 # >>> User timezone setup >>>
 async def start(update: Update, context: CT.DEFAULT_TYPE):
@@ -87,12 +116,22 @@ async def cancel(update: Update, context: CT.DEFAULT_TYPE):
     return ConvoH.END
 # <<< User timezone setup <<<
 
+# >>> Main Menu >>>
 async def main_menu(update: Update, context: CT.DEFAULT_TYPE):
     user_id = update.effective_chat.id
 
     main_menu_keyboard = make_main_menu_keyboard()
 
     await context.bot.send_message(chat_id=user_id, text="Here's the main menu:", reply_markup=main_menu_keyboard)
+# <<< Main Menu <<<
+
+# >>> Task Menu >>>
+async def task_menu(update: Update, context: CT.DEFAULT_TYPE):
+    user_id = update.effective_chat.id
+    user_tasks = helpers.format_tasks(helpers.get_user_tasks(user_id))
+    await context.bot.send_message(chat_id=user_id, text=f"Yourr tasks: \n{user_tasks}")
+# <<< Task Menu <<<
+
 
 if __name__ == "__main__":
     # Load bot token from ./.env
@@ -101,7 +140,10 @@ if __name__ == "__main__":
     # Initiate the DB
     helpers.db_initiator()
 
-    application = AB().token(TOKEN).build()
+    persistence_file = "bot_data.pickle"
+    persistence = PP(filepath=persistence_file)
+
+    application = AB().token(TOKEN).persistence(persistence).build()
 
     setup_convo_handler = ConvoH(
         entry_points=[CH('start', start)],
