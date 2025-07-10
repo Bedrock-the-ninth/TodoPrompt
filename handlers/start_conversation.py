@@ -13,7 +13,7 @@ import logging
 import helpers
 
 # State Definition:
-GET_TIMEZONE_STATE = 1
+GET_TIMEZONE_STATE = -1
 
 # To use logger:
 logger = logging.getLogger(__name__)
