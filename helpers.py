@@ -2,7 +2,9 @@ import sqlite3
 import pytz
 from datetime import datetime, timezone, timedelta
 
-FORMAT_STRING = "%Y-%m-%d %H:%M:%S"
+FORMAT_STRING_C = "%Y-%m-%d %H:%M:%S"
+FORMAT_STRING_DATE = "%Y-%m-%d"
+FORMAT_STRING_TIME = "%H:%M:%S"
 
 
 def execute_query(query, params=(), fetch=False):
@@ -80,8 +82,9 @@ def get_user_local_time(tid: int) -> datetime:
     return user_local_time
 
 
-def add_user_tasks(tid: int, task: str, priority: int) -> int:
-    user_current_time_string = datetime.strftime(get_user_local_time(tid), FORMAT_STRING)
+def add_user_task(tid: int, task: str, priority: int) -> int:
+
+    user_current_time_string = datetime.strftime(get_user_local_time(tid), FORMAT_STRING_C)
 
     if priority in [1, 2, 3]:
         try:
@@ -95,15 +98,14 @@ def add_user_tasks(tid: int, task: str, priority: int) -> int:
         return 1
 
 
-def get_user_tasks(tid):
+def get_user_tasks(tid: int) -> list:
     
-    date = datetime.strftime(get_user_local_time(tid), "%Y-%m-%d") + "%"
+    date = datetime.strftime(get_user_local_time(tid), FORMAT_STRING_DATE) + "%"
     query = (
         "SELECT * FROM tasks "
         "WHERE (user_id = ? AND (created_at LIKE ?)) "
         "ORDER BY priority ASC,created_at ASC "
     )
-
     try:
         today_tasks = execute_query(query, (tid, date), True)
     except sqlite3.Error:
