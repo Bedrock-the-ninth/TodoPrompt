@@ -5,10 +5,8 @@ from telegram.ext import (
     CommandHandler, 
     ContextTypes,
     ConversationHandler, 
-    filters, 
-    MessageHandler   
 )
-from helpers import User
+from helpers.user_data_utils import User
 from telegram.error import BadRequest, Forbidden
 from inline_keyboards_module import main_menu_keyboard, profile_menu_keyboard
 
@@ -19,41 +17,11 @@ logging = logging.getLogger(__name__)
 VIEW_MENU = 0
 VIEW_PROF_STATE = 1
 
-# >>> Main Menu >>>
-async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_chat.id
-
-    main_menu_markup = main_menu_keyboard()
-
-    prior_main_menu = context.user_data.get('main_menu_message_id')
-    if prior_main_menu:
-        if prior_main_menu:
-            try:
-                await context.bot.delete_message(user_id, prior_main_menu)
-            except BadRequest:
-                logging.info(f"Message with ID {prior_main_menu} was not found")
-                context.user_data.pop('main_menu_message_id')
-            except Forbidden:
-                logging.info(f"Bot was blocked by the user. DELETING MESSAGE ID")
-                context.user_data.pop('main_menu_message_id')
-            except Exception as e:
-                logging.info(f"An unexpected error: {e}")
-            else:
-                logging.info(f"Main menu with this ID was removed: {prior_main_menu}")
-
-    sent_message = await context.bot.send_message(
-        chat_id = user_id, 
-        text = "Here's the main menu:", 
-        reply_markup = main_menu_markup
-    )
-
-    context.user_data['main_menu_message_id'] = sent_message.message_id
-    logging.info(f"/main command main menu message ID was stored: {sent_message.message_id}")
-
-    return VIEW_MENU
-
 
 async def close_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    This is a button handler for the close button in the main menu.
+    """
     query = update.callback_query
     await query.answer()
     
@@ -85,6 +53,10 @@ async def close_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def return_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    This handler, belongs to profile return button as it is a 
+    part of main menu conversation.
+    """
     query = update.callback_query
     await query.answer()
 
@@ -140,6 +112,11 @@ async def return_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def view_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    This handler, retreives user data through helpers.User class
+    and outputs a formatted string of information. Still a part
+    of the main menu conversation.
+    """
     query = update.callback_query
     await query.answer()
 
@@ -167,10 +144,80 @@ async def view_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return VIEW_PROF_STATE
 
-        
+
+async def close_all_convos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    This handler, closes all open menus and windows, and ends the main menu
+    conversation flow and cycle. (To be extended later on.)
+    """
+    user_id = update.effective_chat.id
+    
+    # Delete last logged main menu:
+    prior_main_menu_id = context.user_data.get('main_menu_message_id')
+    if prior_main_menu_id:
+        try:
+            await context.bot.delete_message(user_id, prior_main_menu_id)
+            logging.info(f"Prior main menu message with ID {prior_main_menu_id} was successfully deleted by /cancel.")
+            context.user_data.pop('main_menu_message_id', None) # Clear the stored ID
+        except BadRequest:
+            logging.info(f"User {user_id} had no access to {prior_main_menu_id} message.")
+            context.user_data.pop('main_menu_message_id', None)
+        except Forbidden:
+            logging.info(f"The bot is blocked by the user {user_id}.")
+            context.user_data.pop('main_menu_message_id', None)
+        except Exception as e:
+            logging.error(f"An unexpected error occurred trying to delete message {prior_main_menu_id} for user {user_id}")
+    
+    # Send a confirmation message
+    await context.bot.send_message(chat_id=user_id, text="Operation cancelled. All active flows and menus have been closed.")
+
+    # End the conversation cycle
+    return ConversationHandler.END
 
 
-def get_main_menu_handler() -> CommandHandler:
+# >>> Main Menu >>>
+async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    This handler, handles the main menu's appearance and behavior. 
+    """
+
+    user_id = update.effective_chat.id
+
+    main_menu_markup = main_menu_keyboard()
+
+    prior_main_menu = context.user_data.get('main_menu_message_id')
+    if prior_main_menu:
+        if prior_main_menu:
+            try:
+                await context.bot.delete_message(user_id, prior_main_menu)
+            except BadRequest:
+                logging.info(f"Message with ID {prior_main_menu} was not found")
+                context.user_data.pop('main_menu_message_id')
+            except Forbidden:
+                logging.info(f"Bot was blocked by the user. DELETING MESSAGE ID")
+                context.user_data.pop('main_menu_message_id')
+            except Exception as e:
+                logging.info(f"An unexpected error: {e}")
+            else:
+                logging.info(f"Main menu with this ID was removed: {prior_main_menu}")
+
+    sent_message = await context.bot.send_message(
+        chat_id = user_id, 
+        text = "Here's the main menu:", 
+        reply_markup = main_menu_markup
+    )
+
+    context.user_data['main_menu_message_id'] = sent_message.message_id
+    logging.info(f"/main command main menu message ID was stored: {sent_message.message_id}")
+
+    return VIEW_MENU
+
+
+def get_main_menu_handler() -> ConversationHandler:
+    """
+    Returning a ConversationHandler object back to the bot.py
+    to be rendered in the application. 
+    """
     return ConversationHandler(
         entry_points = [CommandHandler('menu', main_menu)],
         states = {
@@ -190,7 +237,7 @@ def get_main_menu_handler() -> CommandHandler:
         ],
         allow_reentry = True,
         map_to_parent = {
-            ConversationHandler.END : VIEW_MENU
+            ConversationHandler.END : ConversationHandler.END
         }
     )
 # <<< Main Menu <<<

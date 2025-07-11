@@ -10,7 +10,7 @@ from telegram.ext import (
     MessageHandler,
 )
 import logging
-import helpers
+import helpers.user_data_utils as helpers
 
 # State Definition:
 GET_TIMEZONE_STATE = -1
