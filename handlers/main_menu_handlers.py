@@ -8,8 +8,9 @@ from telegram.ext import (
     filters, 
     MessageHandler   
 )
+from helpers import User
 from telegram.error import BadRequest, Forbidden
-from inline_keyboards_module import main_menu_keyboard
+from inline_keyboards_module import main_menu_keyboard, profile_menu_keyboard
 
 import logging
 
@@ -17,10 +18,6 @@ logging = logging.getLogger(__name__)
 
 VIEW_MENU = 0
 VIEW_PROF_STATE = 1
-VIEW_TASKS_STATE = 2
-VIEW_REMINDERS_STATE = 3
-VIEW_SETTING_STATE = 4
-
 
 # >>> Main Menu >>>
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -132,15 +129,45 @@ async def return_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.edit_message_text(
                 chat_id = user_id, 
                 message_id = message_to_edit_id, 
-                text = "Here's the main menu:"
-            )
-            await context.bot.edit_message_reply_markup(
-                chat_id = user_id,
-                message_id = message_to_edit_id,
+                text = "Here's the main menu:",
                 reply_markup = main_menu_markup
             )
 
+            context.user_data['main_menu_message_id'] = message_to_edit_id
+            logging.info(f"Main menu with ID {message_to_edit_id} was added.")
+
     return VIEW_MENU
+
+
+async def view_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = update.effective_chat.id
+    message_to_edit_id = query.message.message_id
+
+    prior_main_menu = context.user_data.get('main_menu_message_id', None)
+    user_at_hand = User(user_id)
+    profile_menu_markup = profile_menu_keyboard()
+
+    if prior_main_menu:
+        try:
+            await context.bot.edit_message_text(
+                chat_id = user_id,
+                message_id = message_to_edit_id,
+                text = user_at_hand.get_user_profile(),
+                reply_markup = profile_menu_markup
+            )
+        except Exception as e:
+            logging.info(f"{e}: Some exceptions arouse")
+        else:
+            del user_at_hand
+    
+    context.user_data['main_menu_message_id'] = message_to_edit_id
+
+    return VIEW_PROF_STATE
+
+        
 
 
 def get_main_menu_handler() -> CommandHandler:
@@ -156,27 +183,14 @@ def get_main_menu_handler() -> CommandHandler:
             VIEW_PROF_STATE : [
                 CallbackQueryHandler(pattern='^profile_return$', callback=return_to_menu)
             ],
-            VIEW_TASKS_STATE : [
-                CallbackQueryHandler(pattern='^tasks_add$', callback=add_tasks),
-                CallbackQueryHandler(pattern='^tasks_remove$', callback=remove_tasks),
-                CallbackQueryHandler(pattern='^tasks_return', callback=return_to_menu)
-            ],
-            VIEW_REMINDERS_STATE : [
-                CallbackQueryHandler(pattern='^reminders_achievement$', callback=achievement_reminders),
-                CallbackQueryHandler(pattern='^reminders_last_call$', callback=last_call_reminders),
-                CallbackQueryHandler(pattern='^reminders_return$', callback=return_to_menu)
-            ],
-            VIEW_SETTING_STATE : [
-                CallbackQueryHandler(pattern='^settings_change_timezone$', callback=change_timezone),
-                CallbackQueryHandler(pattern='^settings_remove_reminder_a$', callback=reminder_a_removal),
-                CallbackQueryHandler(pattern='^settings_remove_reminder_l$', callback=reminder_l_removal),
-                CallbackQueryHandler(pattern='^settings_delete_account$', callback=delete_account),
-                CallbackQueryHandler(pattern='^settings_return&', callback=return_to_menu),
-            ]
         },
         fallbacks = [
-            CallbackQueryHandler(pattern='^menu_close$', callback=close_menu)
+            CallbackQueryHandler(pattern='^menu_close$', callback=close_menu),
+            CommandHandler('cancel', close_all_convos)
         ],
-        allow_reentry = True
+        allow_reentry = True,
+        map_to_parent = {
+            ConversationHandler.END : VIEW_MENU
+        }
     )
 # <<< Main Menu <<<
