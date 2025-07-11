@@ -60,40 +60,47 @@ class User:
         print("__STR__: This class serves to initialize and get the required info about a user.")
     
         
-    def get_user_tasks(uid: int) -> list:
+    def get_user_tasks(self) -> list:
         
-        date = datetime.strftime(get_user_local_time(uid), FORMAT_STRING_DATE) + "%"
+        date = datetime.strftime(get_user_local_time(self.uid), FORMAT_STRING_DATE) + "%"
         query = (
             "SELECT * FROM tasks "
             "WHERE (user_id = ? AND (created_at LIKE ?)) "
             "ORDER BY priority ASC,created_at ASC "
         )
         try:
-            today_tasks = execute_query(query, (uid, date), True)
+            today_tasks = execute_query(query, (self.uid, date), True)
         except Error:
-            return 1
+            return [1]
         else:
-            return today_tasks
+            formatted_list = []
+            for (index, task) in enumerate(today_tasks):
+                priority = "🔥" * task[3]
+                is_done = "✅" if task[4] == 1 else " "
+                formatted_string = f"|{index+1}|-- {task[2]} -- {priority} -- ({is_done})"
+                formatted_list.append(formatted_string)
+
+            return formatted_list
+
         
     
-    def add_user_task(uid: int, task: str, priority: int) -> int:
+    def add_user_task(self, task: str, priority: int) -> int:
 
-        user_current_time_string = datetime.strftime(get_user_local_time(uid), FORMAT_STRING_C)
+        user_current_time_string = datetime.strftime(get_user_local_time(self.uid), FORMAT_STRING_C)
 
         if priority in [1, 2, 3]:
             try:
                 execute_query("INSERT INTO tasks (user_id, content, priority, created_at) VALUES (?, ?, ?, ?)",
-                            params=(uid, task, priority, user_current_time_string))
+                            params=(self.uid, task, priority, user_current_time_string))
             except Error:
                 return 2
-            else:
-                execute_query("UPDATE users SET reminder_left_enabled = TRUE")
         else:
             return 1
 
+        return 0
        
     def get_user_profile(self) -> str:
-        def user_info(self) -> dict:
+        def user_info() -> dict:
             timezone = execute_query("SELECT timezone FROM users WHERE telegram_id = ?", (self.uid,), True)[0]
             tasks_logged = execute_query("SELECT COUNT(id) FROM tasks WHERE user_id = ?", (self.uid,), True)[0]
             tasks_done = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = TRUE)", (self.uid,), True)[0]
@@ -125,7 +132,7 @@ class User:
 
             return user_info
         
-        info = self.user_info()
+        info = user_info()
 
         formatted_strings = [
             f"👤 Your Telegram ID: {self.uid}",

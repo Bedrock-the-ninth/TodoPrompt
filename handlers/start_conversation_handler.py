@@ -1,6 +1,8 @@
-# handlers/start_conversation.py
+# handlers/start_conversation_handler.py
 
-# Necessary module imports:
+# GENERAL PYTHON imports ->
+import logging
+# TELEGRAM BOT imports ->
 from telegram import Update
 from telegram.ext import (
     CommandHandler,
@@ -9,11 +11,10 @@ from telegram.ext import (
     filters,
     MessageHandler,
 )
-import logging
+# DOMESTIC imports ->
 import helpers.user_data_utils as helpers
-
-# State Definition:
-GET_TIMEZONE_STATE = -1
+# STATE imports ->
+from config import GET_TIMEZONE_STATE
 
 # To use logger:
 logger = logging.getLogger(__name__)

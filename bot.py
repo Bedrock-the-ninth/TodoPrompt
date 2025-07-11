@@ -7,7 +7,7 @@ from pathlib import Path
 # TELEGRAM BOT related imports ->
 from telegram.ext import (ApplicationBuilder, PicklePersistence)
 # DOMESTIC Imports ->
-from handlers.start_menu_handler import get_setup_conversation_handler
+from handlers.start_conversation_handler import get_setup_conversation_handler
 from handlers.main_menu_handlers import get_main_menu_handler
 import helpers.db_utils as helpers
 

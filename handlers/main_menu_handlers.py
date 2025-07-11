@@ -1,21 +1,25 @@
 # handlers/main_menu_handlers.py
+
+# GENERAL PYTHON imports ->
+import logging
+# TELEGRAM BOT imports ->
 from telegram import Update
+from telegram.error import BadRequest, Forbidden
 from telegram.ext import (
     CallbackQueryHandler, 
     CommandHandler, 
     ContextTypes,
     ConversationHandler, 
 )
+# DOMESTIC imports ->
+from handlers.task_menu_handlers import view_task_menu
 from helpers.user_data_utils import User
-from telegram.error import BadRequest, Forbidden
 from inline_keyboards_module import main_menu_keyboard, profile_menu_keyboard
+# STATE imports ->
+from config import VIEW_MENU, VIEW_PROF_STATE
 
-import logging
 
 logging = logging.getLogger(__name__)
-
-VIEW_MENU = 0
-VIEW_PROF_STATE = 1
 
 
 async def close_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -223,7 +227,7 @@ def get_main_menu_handler() -> ConversationHandler:
         states = {
             VIEW_MENU : [
                 CallbackQueryHandler(pattern='^menu_view_profile$', callback=view_profile),
-                CallbackQueryHandler(pattern='^menu_view_tasks$', callback=view_tasks),
+                CallbackQueryHandler(pattern='^menu_view_tasks$', callback=view_task_menu),
                 CallbackQueryHandler(pattern='^menu_view_reminders$', callback=view_reminders),
                 CallbackQueryHandler(pattern='^menu_settings', callback=view_settings)
             ],
