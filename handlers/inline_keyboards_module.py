@@ -22,7 +22,7 @@ def profile_menu_keyboard() -> InlineKeyboardMarkup:
 
 def tasks_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
-        [InlineKeyboardButton("➕ Add", callback_data="tasks_add"), InlineKeyboardButton("➖ Remove", callback_data="tasks_remove")]
+        [InlineKeyboardButton("➕ Add", callback_data="tasks_add"), InlineKeyboardButton("➖ Remove", callback_data="tasks_remove")],
         [InlineKeyboardButton("🔙 Return to Menu", callback_data="tasks_return")]
     ]
 

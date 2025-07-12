@@ -10,7 +10,7 @@ FORMAT_STRING_TIME = "%H:%M:%S"
 
 
 def is_a_user(uid: str):
-    user = execute_query('SELECT * FROM users WHERE telegram_id = ?', params=(uid,), fetch=True)
+    user = execute_query('SELECT * FROM users WHERE telegram_id = ?', (uid,), True)[0]
 
     if len(user) > 0:
         return True
@@ -27,7 +27,7 @@ def create_user_profile(uid, user_input):
     user_tz_raw = datetime.now(user_tz).strftime("%z")
     user_tz_offset = f"UTC{user_tz_raw[0:3]}:{user_tz_raw[3:]}"
 
-    execute_query(query="INSERT INTO users VALUES (?, ?, ?, ?)", params=(uid, user_tz_offset, False, False))
+    execute_query("INSERT INTO users VALUES (?, ?, ?, ?)", params=(uid, user_tz_offset, False, False))
 
 
 def get_offset(string_offset: str) -> timedelta:
@@ -42,7 +42,7 @@ def get_offset(string_offset: str) -> timedelta:
 
 
 def get_user_local_time(uid: int) -> datetime:
-    string_offset = (execute_query("SELECT timezone FROM users WHERE telegram_id = ?", (uid,), True))[0]
+    string_offset = (execute_query("SELECT timezone FROM users WHERE telegram_id = ?", (uid,), True))[0][0]
 
     offset = get_offset(string_offset)
     current_utc_time = datetime.now(timezone.utc)
@@ -54,13 +54,13 @@ def get_user_local_time(uid: int) -> datetime:
 
 class User:
     def __init__(self, uid):
-        self.uid: int = uid,
+        self.uid: int = uid
 
     def __str__(self):
         print("__STR__: This class serves to initialize and get the required info about a user.")
     
         
-    def get_user_tasks(self) -> list:
+    def get_user_tasks(self) -> list | None:
         
         date = datetime.strftime(get_user_local_time(self.uid), FORMAT_STRING_DATE) + "%"
         query = (
@@ -73,14 +73,17 @@ class User:
         except Error:
             return [1]
         else:
-            formatted_list = []
-            for (index, task) in enumerate(today_tasks):
-                priority = "🔥" * task[3]
-                is_done = "✅" if task[4] == 1 else " "
-                formatted_string = f"|{"0" if index <= 8 else ""}{index+1}|-- {task[2]} -- {priority} -- ({is_done})"
-                formatted_list.append(formatted_string)
+            if today_tasks:
+                formatted_list = []
+                for (index, task) in enumerate(today_tasks):
+                    priority = "🔥" * task[3]
+                    is_done = "✅" if task[4] == 1 else "🔲"
+                    formatted_string = f"|{"0" if index <= 8 else ""}{index+1}|-- {task[2]} -- {priority} -- ({is_done})"
+                    formatted_list.append(formatted_string)
 
-            return formatted_list
+                return formatted_list
+            else:
+                return None
         
     
     def add_user_task(self, task: str, priority: int) -> int:
@@ -90,7 +93,7 @@ class User:
         if priority in [1, 2, 3]:
             try:
                 execute_query("INSERT INTO tasks (user_id, content, priority, created_at) VALUES (?, ?, ?, ?)",
-                            params=(self.uid, task, priority, user_current_time_string))
+                            (self.uid, task, priority, user_current_time_string))
             except Error:
                 return 2
         else:
@@ -101,7 +104,7 @@ class User:
 
     def remove_user_task(self, task: str) -> int:
         try:
-            execute_query("DELETE FROM tasks WHERE (user_id = ? AND task = ?)", (self.uid, task))
+            execute_query("DELETE FROM tasks WHERE (user_id = ? AND content = ?)", (self.uid, task))
         except Error:
             return 1
         
@@ -109,23 +112,23 @@ class User:
 
        
     def get_user_profile(self) -> str:
-        def user_info() -> dict:
-            timezone = execute_query("SELECT timezone FROM users WHERE telegram_id = ?", (self.uid,), True)[0]
-            tasks_logged = execute_query("SELECT COUNT(id) FROM tasks WHERE user_id = ?", (self.uid,), True)[0]
-            tasks_done = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = TRUE)", (self.uid,), True)[0]
-            tasks_left = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = FALSE)", (self.uid,), True)[0]
+        def user_info(uid = self.uid) -> dict:
+            timezone = execute_query("SELECT timezone FROM users WHERE telegram_id = ?", (uid,), True)[0][0]
+            tasks_logged = execute_query("SELECT COUNT(id) FROM tasks WHERE user_id = ?", (uid,), True)[0][0]
+            tasks_done = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = TRUE)", (uid,), True)[0][0]
+            tasks_left = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = FALSE)", (uid,), True)[0][0]
             
-            todays_date = datetime.strftime(get_user_local_time, FORMAT_STRING_DATE) + "%"
+            todays_date = datetime.strftime(get_user_local_time(uid), FORMAT_STRING_DATE) + "%"
             todays_tasks = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND (created_at LIKE ?))",
-                                        (self.uid, todays_date), True)[0]
+                                        (uid, todays_date,), True)[0][0]
             
-            if execute_query("SELECT reminder_done_enabled FROM users WHERE telegram_id = ?", (self.uid,), True)[0] == "TRUE":
-                reminder_done = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'DONE')")[0]
+            if execute_query("SELECT reminder_done_enabled FROM users WHERE telegram_id = ?", (uid,), True)[0][0] == 1:
+                reminder_done = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'DONE')", (uid,))[0][0]
             else:
                 reminder_done = "None set!"
             
-            if execute_query("SELECT reminder_left_enabled FROM users WHERE telegram_id = ?", (self.uid,), True)[0] == "FALSE":
-                reminder_left = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'LEFT')")[0]
+            if execute_query("SELECT reminder_left_enabled FROM users WHERE telegram_id = ?", (uid,), True)[0][0] == 1:
+                reminder_left = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'LEFT')", (uid,), True)[0][0]
             else:
                 reminder_left = "None set!"
 

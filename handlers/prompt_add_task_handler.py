@@ -13,12 +13,18 @@ from telegram.ext import (
     MessageHandler   
 )
 # DOMESTIC imports ->
-from handlers.common_handlers import close_all_convos, return_to_tasks
+from handlers.common_handlers import (
+    close_all_convos, 
+    return_to_tasks,
+    delete_previous_menu,
+    send_new_menu,
+    edit_previous_menu
+)
 from handlers.inline_keyboards_module import tasks_keyboard, subtasks_keyboard
 from helpers.user_data_utils import User
 
 # State Definition for ConversationHandlers
-from config import VIEW_TASKS_STATE, PROMPT_REMOVE_TASK_STATE
+from config import VIEW_TASKS_STATE, PROMPT_ADD_TASK_STATE, ACTUAL_ADD_TASK_STATE
 # Initiating logger
 logging = logging.getLogger(__name__)
 
@@ -27,27 +33,23 @@ async def prompt_add_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    user_id = update.effective_chat.id
+    prior_main_menu = context.user_data['main_menu_message_id']
     message_to_edit_id = query.message.message_id
+
+    add_task_guide_text = "You can send your \"task\" followed by a \":\" and then its \"priority\" "
+    "(or urgency) as an integer from 1 to 3. You can always (from anywhere in the bot) use " \
+    "the /add_task command followed by the same instructions to add your task.\n " \
+    "Example: Go shopping:2\nor/add_task Go shopping:2"
     subtask_markup = subtasks_keyboard()
 
-    try:
-        await context.bot.edit_message_text(
-            chat_id = user_id,
-            message_id = message_to_edit_id,
-            text = "You can send your \"task\" followed by a \":\" and then its \"priority\" "
-            "(or urgency) as an integer from 1 to 3. You can always (from anywhere in the bot) use " \
-            "the /add_task command followed by the same instructions to add your task.\n " \
-            "Example: /add_task Go shopping:2",
-            reply_markup = subtask_markup
-        )
-    except Exception as e:
-        logging.info(f"An unknown exception arose: {e}")
+    if prior_main_menu == message_to_edit_id:
+        edit_previous_menu(update, context, add_task_guide_text, subtask_markup)
     else:
-        context.user_data['edited_main_menu_id'] = message_to_edit_id
-        logging.info(f"Main menu with the ID {message_to_edit_id} was edited into a add_task_prompt.")
+        delete_previous_menu(update, context)
+        context.user_data['main_menu_message_id'] = message_to_edit_id
+        edit_previous_menu(update, context, add_task_guide_text, subtask_markup)
 
-    return PROMPT_REMOVE_TASK_STATE
+    return PROMPT_ADD_TASK_STATE
 
 
 async def recieve_new_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -60,7 +62,7 @@ async def recieve_new_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
         new_task = user_input.split(":")
     else:
         await context.bot.send_message(chat_id=user_id, text="Invalid format for adding a task.")
-        return PROMPT_REMOVE_TASK_STATE
+        return ACTUAL_ADD_TASK_STATE
     
     user_at_hand = User(user_id)
     result = user_at_hand.add_user_task(task = new_task[0], priority=int(new_task[1]))
@@ -97,7 +99,7 @@ async def recieve_new_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return ConversationHandler.END
     else:
         await context.bot.send_message(chat_id=user_id, text="Something went wrong, try again!")
-        return PROMPT_REMOVE_TASK_STATE
+        return ACTUAL_ADD_TASK_STATE
 # <<< ADD TASK STATE PROMPTS <<<
 
 def get_prompt_add_task_handler():
@@ -107,9 +109,11 @@ def get_prompt_add_task_handler():
             CommandHandler('add_task', recieve_new_task)
         ],
         states = {
-            PROMPT_REMOVE_TASK_STATE : [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, recieve_new_task),
+            PROMPT_ADD_TASK_STATE : [
                 CallbackQueryHandler(pattern='^subtasks_return$', callback=return_to_tasks)
+            ],
+            ACTUAL_ADD_TASK_STATE : [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, recieve_new_task),
             ]
         },
         fallbacks = [

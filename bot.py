@@ -7,8 +7,11 @@ from pathlib import Path
 # TELEGRAM BOT related imports ->
 from telegram.ext import (ApplicationBuilder, PicklePersistence)
 # DOMESTIC Imports ->
-from handlers.start_conversation_handler import get_setup_conversation_handler
 from handlers.main_menu_handlers import get_main_menu_handler
+from handlers.prompt_add_task_handler import get_prompt_add_task_handler
+from handlers.prompt_remove_task_handler import get_prompt_remove_task_handler
+from handlers.start_conversation_handler import get_setup_conversation_handler
+from handlers.task_menu_handlers import get_task_menu_handler
 import helpers.db_utils as helpers
 
 
@@ -17,10 +20,10 @@ DATA_DIR = Path('data')
 PERSISTENCE_FILE = DATA_DIR / "bot_data.pickle"
 
 # Enable logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+# logging.basicConfig(
+#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+# )
+# logger = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
@@ -43,10 +46,16 @@ if __name__ == "__main__":
 
     setup_convo = get_setup_conversation_handler()
     main_menu = get_main_menu_handler()
+    task_menu = get_task_menu_handler()
+    prompt_add_task = get_prompt_add_task_handler()
+    prompt_remove_task = get_prompt_remove_task_handler()
 
     application = app_builder.build()
 
     application.add_handler(setup_convo)
     application.add_handler(main_menu)
+    application.add_handler(task_menu)
+    application.add_handler(prompt_add_task)
+    application.add_handler(prompt_remove_task)
 
     application.run_polling()

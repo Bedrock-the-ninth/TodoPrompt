@@ -10,11 +10,14 @@ def execute_query(query, params=(), fetch=False):
         cursor = conn.cursor()
         cursor.execute(query, params)
         if fetch:
-            return cursor.fetchall()
+            fetched = cursor.fetchall()
+            if len(fetched) > 0:
+                return fetched
+            else:
+                return None
         else:
             conn.commit()
-            return None 
-    
+            return None
 
 def db_initiator():
     DATA_DIR.mkdir(parents=True, exist_ok=True)

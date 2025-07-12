@@ -15,12 +15,18 @@ from telegram.ext import (
     MessageHandler   
 )
 # DOMESTIC imports ->
-from handlers.common_handlers import close_all_convos, return_to_tasks
+from handlers.common_handlers import (
+    close_all_convos, 
+    return_to_tasks,
+    delete_previous_menu,
+    send_new_menu,
+    edit_previous_menu
+)
 from handlers.inline_keyboards_module import tasks_keyboard, subtasks_keyboard
 from helpers.user_data_utils import User
 
 # State Definition for ConversationHandlers
-from config import VIEW_TASKS_STATE, PROMPT_REMOVE_TASK_STATE
+from config import VIEW_TASKS_STATE, PROMPT_REMOVE_TASK_STATE, ACTUAL_REMOVE_TASK_STATE
 # Initiating logger
 logging = logging.getLogger(__name__)
 
@@ -29,55 +35,27 @@ logging = logging.getLogger(__name__)
 async def prompt_remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    edited_main_menu = query.message.message_id
+    prior_main_menu = context.user_data['main_menu_message_id']
 
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
 
-    edited_main_menu = query.message.message_id
-    prior_main_menu = context.user_data['main_menu_message_id']
-
-    text_string = f"Your tasks are as follows:\n{"\n".join(user_at_hand.get_user_tasks())}"
-    "\n\nJust send the row number of the one you wish to delete."
-
-    remove_task_markup = subtasks_keyboard
+    text_string = f"Your tasks are as follows:\n{"\n".join(user_at_hand.get_user_tasks())}\n\n"\
+        "Just send the row number of the one you wish to delete."
+    remove_task_markup = subtasks_keyboard()
 
     if prior_main_menu == edited_main_menu:
-        try:
-            await context.bot.edit_message_text(
-                chat_id = user_id,
-                message_id = edited_main_menu,
-                text = text_string,
-                reply_markup = remove_task_markup
-            )
-        except Forbidden:
-            logging.info(f"Bot is blocked by the user with ID {user_id}.")
-        except Exception as e:
-            logging.info(f"{e}: An unknown error happened.")
-        else:
-            del user_at_hand
-            return PROMPT_REMOVE_TASK_STATE
+        await edit_previous_menu(update, context, text_string, remove_task_markup)
+        del user_at_hand
+        return ACTUAL_REMOVE_TASK_STATE
     else:
-        try:
-            await context.bot.delete_message(chat_id=user_id, message_id=prior_main_menu)
-        except BadRequest:
-            logging.info(f"Main menu with the ID {prior_main_menu} doesn't exist.")
-        except Forbidden:
-            logging.info(f"Bot was blocked by user with the ID {user_id}")
-        except Exception as e:
-            logging.info(f"{e}: An unknown error happened.")
-        else:
-            await context.bot.edit_message_text(
-                chat_id = user_id,
-                message_id = edited_main_menu,
-                text = text_string,
-                reply_markup = remove_task_markup
-            )
+        delete_previous_menu(update, context)
+        context.user_data['main_menu_message_id'] = edited_main_menu
+        edit_previous_menu(update, context, text_string, remove_task_markup)
 
-            context.user_data['main_menu_message_id'] = edited_main_menu
-            logging.info(f"New main menu with ID {edited_main_menu} was logged.")
-
-            del user_at_hand
-            return PROMPT_REMOVE_TASK_STATE
+        del user_at_hand
+        return ACTUAL_REMOVE_TASK_STATE
 
 
 async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -86,50 +64,33 @@ async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_tasks = user_at_hand.get_user_tasks()
 
-    prior_main_menu = context.user_data['main_menu_message_id']
     text_string = f"Your tasks are as follows:\n{"\n".join(user_tasks)}"
-    remove_task_markup = subtasks_keyboard
+    remove_task_markup = subtasks_keyboard()
 
     try:
-        user_input = int(update.message.text)
+        user_input = int(update.message.text) - 1
     except ValueError:
         logging.info(f"User entered an input that is not a number.")
+        error_text_1 = text_string + "\n*❌Your input was not a parsable integer. Try again!*"
 
-        await context.bot.edit_message_text(
-            chat_id = user_id,
-            message_id = prior_main_menu,
-            text = text_string + "\n*❌Your input was not a parsable integer. Try again!*",
-            reply_markup = remove_task_markup,
-            parse_mode=ParseMode.MARKDOWN_V2
-        )
+        edit_previous_menu(update, context, error_text_1, remove_task_markup)
         del user_at_hand
-        return PROMPT_REMOVE_TASK_STATE
-
+        return ACTUAL_REMOVE_TASK_STATE
     except TypeError:
         logging.info(f"User entered an empty input that is probably of type <NoneType>.")
+        error_text_2 = text_string + "\n*❌Your input was not a parsable integer. Try again!*"
 
-        await context.bot.edit_message_text(
-            chat_id = user_id,
-            message_id = prior_main_menu,
-            text = text_string + "\n*❌Your input was not a parsable integer. Try again!*",
-            reply_markup = remove_task_markup,
-            parse_mode=ParseMode.MARKDOWN_V2
-        )
+        edit_previous_menu(update, context, error_text_2, remove_task_markup)
         del user_at_hand
-        return PROMPT_REMOVE_TASK_STATE
-    
+        return ACTUAL_REMOVE_TASK_STATE
     else:
-        if not 0 < user_input < len(user_tasks):
+        if not 0 <= user_input < len(user_tasks):
             logging.info(f"User entered an input out of their tasklist range.")
-            await context.bot.edit_message_text(
-                chat_id = user_id,
-                message_id = prior_main_menu,
-                text = text_string + "\n*❌Your input was out of range. Try again!*",
-                reply_markup = remove_task_markup,
-                parse_mode=ParseMode.MARKDOWN_V2
-            )
+            error_text_3 = text_string + "\n*❌Your input was out of range. Try again!*"
+
+            edit_previous_menu(update, context, error_text_3, remove_task_markup)
             del user_at_hand
-            return PROMPT_REMOVE_TASK_STATE
+            return ACTUAL_REMOVE_TASK_STATE
         else:
             to_be_removed_string: str = user_tasks[user_input]
             to_be_removed_task =  to_be_removed_string.split('--')[1].strip()
@@ -139,40 +100,40 @@ async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if result == 0:
                 logging.info(f"Task `{to_be_removed_task}` was successfully removed for user {user_id}")
                 
-                await context.bot.edit_message_text(
-                    chat_id = user_id,
-                    message_id = prior_main_menu,
-                    text = "\n*✅Your task was removed successfully. If you wish you can remove another (assuming there are still tasks to remove.)*" + text_string,
-                    reply_markup = remove_task_markup,
-                    parse_mode=ParseMode.MARKDOWN_V2
-                )
+                refetch_list = user_at_hand.get_user_tasks()
+                if len(refetch_list) > 0:
+                    refetch_string = "\n".join(refetch_list)
+                else:
+                    refetch_string = ""
+
+                success_string = "\n*✅Your task was removed successfully. If you wish you can remove another (assuming there are still tasks to remove.)*" + refetch_string
+                task_menu_markup = tasks_keyboard()
+
+                edit_previous_menu(update, context, success_string, task_menu_markup)
                 del user_at_hand
-                return PROMPT_REMOVE_TASK_STATE
+                return ConversationHandler.END
             else:
                 logging.info("Unsuccessful attempt to remove the task")
+                error_text_4 = text_string + "\n*❌Unsuccessful attempt to remove your task. Try again!*"
 
-                await context.bot.edit_message_text(
-                    chat_id = user_id,
-                    message_id = prior_main_menu,
-                    text = text_string + "\n*❌Unsuccessful attempt to remove your task. Try again!*",
-                    reply_markup = remove_task_markup,
-                    parse_mode=ParseMode.MARKDOWN_V2
-                )
+                edit_previous_menu(update, context, error_text_4, remove_task_markup)
                 del user_at_hand
-                return PROMPT_REMOVE_TASK_STATE
+                return ACTUAL_REMOVE_TASK_STATE
                 
             
 
 # <<< Remove Task State Prompts <<<
-def get_prompt_remove_task():
+def get_prompt_remove_task_handler():
     return ConversationHandler(
         entry_points = {
             CallbackQueryHandler(pattern='^tasks_remove$', callback=prompt_remove_task),
         },
         states = {
             PROMPT_REMOVE_TASK_STATE : [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, remove_task),
                 CallbackQueryHandler(pattern='^subtasks_return$', callback=return_to_tasks)
+            ],
+            ACTUAL_REMOVE_TASK_STATE : [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, remove_task),
             ]
         },
         fallbacks = {
