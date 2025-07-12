@@ -33,8 +33,20 @@ if __name__ == "__main__":
     helpers.db_initiator()
     persistence = PicklePersistence(filepath=PERSISTENCE_FILE)
 
-    application = ApplicationBuilder().token(TOKEN).persistence(persistence).build()
-    application.add_handler(get_setup_conversation_handler)
-    application.add_handler(get_main_menu_handler)
+    """
+    Dividing the application and the build process allows for a more logical
+    flow of things especially the main_menu and setup_convo assignment.
+    This change was suggested by Gemini.
+    """
+
+    app_builder = ApplicationBuilder().token(TOKEN).persistence(persistence)
+
+    setup_convo = get_setup_conversation_handler()
+    main_menu = get_main_menu_handler()
+
+    application = app_builder.build()
+
+    application.add_handler(setup_convo)
+    application.add_handler(main_menu)
 
     application.run_polling()

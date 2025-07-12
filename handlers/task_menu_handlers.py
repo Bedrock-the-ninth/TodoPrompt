@@ -13,9 +13,10 @@ from telegram.ext import (
     MessageHandler   
 )
 # DOMESTIC imports ->
+from handlers.common_handlers import close_all_convos, return_to_menu
 from handlers.inline_keyboards_module import tasks_keyboard
 from handlers.prompt_add_task_handler import prompt_add_task
-from handlers.main_menu_handlers import return_to_menu, close_all_convos
+from handlers.prompt_remove_task_handler import prompt_remove_task
 from helpers.user_data_utils import User
 
 # State Definition for ConversationHandlers
