@@ -58,8 +58,8 @@ async def close_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def return_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    This handler, belongs to profile return button as it is a 
-    part of main menu conversation.
+    This handler, belongs to return buttons beneath parts which are in
+    reach of the main menu with a return button.
     """
     query = update.callback_query
     await query.answer()
@@ -73,21 +73,14 @@ async def return_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if prior_main_menu == message_to_edit_id:
         try:
-            await context.bot.edit_message_reply_markup(
-                chat_id = user_id,
-                message_id = message_to_edit_id,
-                reply_markup = main_menu_markup
-            )
-
-        except Forbidden:
-            logging.info(f"The bot is blocked by the user {user_id}.")
-
-        else:
             await context.bot.edit_message_text(
                 chat_id = user_id, 
                 message_id = message_to_edit_id, 
-                text = "Here's the main menu:"
+                text = "Here's the main menu:",
+                reply_markup = main_menu_markup
             )
+        except Forbidden:
+            logging.info(f"The bot is blocked by the user {user_id}.")
     else:
         try:
             await context.bot.delete_message(
@@ -239,9 +232,9 @@ def get_main_menu_handler() -> ConversationHandler:
             CallbackQueryHandler(pattern='^menu_close$', callback=close_menu),
             CommandHandler('cancel', close_all_convos)
         ],
-        allow_reentry = True,
         map_to_parent = {
             ConversationHandler.END : ConversationHandler.END
-        }
+        },
+        allow_reentry = True,
     )
 # <<< Main Menu <<<

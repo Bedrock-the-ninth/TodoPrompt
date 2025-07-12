@@ -77,11 +77,10 @@ class User:
             for (index, task) in enumerate(today_tasks):
                 priority = "🔥" * task[3]
                 is_done = "✅" if task[4] == 1 else " "
-                formatted_string = f"|{index+1}|-- {task[2]} -- {priority} -- ({is_done})"
+                formatted_string = f"|{"0" if index <= 8 else ""}{index+1}|-- {task[2]} -- {priority} -- ({is_done})"
                 formatted_list.append(formatted_string)
 
             return formatted_list
-
         
     
     def add_user_task(self, task: str, priority: int) -> int:
@@ -98,6 +97,16 @@ class User:
             return 1
 
         return 0
+    
+
+    def remove_user_task(self, task: str) -> int:
+        try:
+            execute_query("DELETE FROM tasks WHERE (user_id = ? AND task = ?)", (self.uid, task))
+        except Error:
+            return 1
+        
+        return 0
+
        
     def get_user_profile(self) -> str:
         def user_info() -> dict:
