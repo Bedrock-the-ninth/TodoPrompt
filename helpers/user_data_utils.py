@@ -10,12 +10,12 @@ FORMAT_STRING_TIME = "%H:%M:%S"
 
 
 def is_a_user(uid: str):
-    user = execute_query('SELECT * FROM users WHERE telegram_id = ?', (uid,), True)[0]
+    user = execute_query('SELECT * FROM users WHERE telegram_id = ?', (uid,), True)
 
-    if len(user) > 0:
-        return True
-    else:
+    if user is None:
         return False
+    else:
+        return True
 
 
 def is_timezone_valid(user_input: str) -> bool:
@@ -109,8 +109,20 @@ class User:
             return 1
         
         return 0
+    
 
-       
+    def mark_done_and_return_new_list(self, task: str) -> list | int | None:
+        user_local_date = datetime.strftime(get_user_local_time(self.uid), FORMAT_STRING_DATE) + "%"
+        update_query = "UPDATE tasks SET is_done = TRUE WHERE (user_id = ? AND content = ? AND (created_at LIKE ?))"
+        try:
+            execute_query(update_query, (self.uid, task, user_local_date))
+        except Error:
+            return 1
+        else:
+            refetched_user_tasks = self.get_user_tasks()
+            return refetched_user_tasks
+
+
     def get_user_profile(self) -> str:
         def user_info(uid = self.uid) -> dict:
             timezone = execute_query("SELECT timezone FROM users WHERE telegram_id = ?", (uid,), True)[0][0]

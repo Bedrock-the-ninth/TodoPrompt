@@ -9,6 +9,7 @@ from telegram.ext import (ApplicationBuilder, PicklePersistence)
 # DOMESTIC Imports ->
 from handlers.main_menu_handlers import get_main_menu_handler
 from handlers.prompt_add_task_handler import get_prompt_add_task_handler
+from handlers.prompt_check_task_handler import get_prompt_check_task_handler
 from handlers.prompt_remove_task_handler import get_prompt_remove_task_handler
 from handlers.start_conversation_handler import get_setup_conversation_handler
 from handlers.task_menu_handlers import get_task_menu_handler
@@ -49,6 +50,7 @@ if __name__ == "__main__":
     task_menu = get_task_menu_handler()
     prompt_add_task = get_prompt_add_task_handler()
     prompt_remove_task = get_prompt_remove_task_handler()
+    prompt_task_check = get_prompt_check_task_handler()
 
     application = app_builder.build()
 
@@ -57,5 +59,6 @@ if __name__ == "__main__":
     application.add_handler(task_menu)
     application.add_handler(prompt_add_task)
     application.add_handler(prompt_remove_task)
+    application.add_handler(prompt_task_check)
 
     application.run_polling()
