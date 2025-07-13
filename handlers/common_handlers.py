@@ -107,7 +107,7 @@ async def return_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['main_menu_message_id'] = message_to_edit_id
         await edit_previous_menu(update, context, text, main_menu_markup)
 
-    return VIEW_MENU
+    return ConversationHandler.END
 
 
 async def return_to_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
