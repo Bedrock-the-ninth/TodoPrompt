@@ -71,7 +71,7 @@ class User:
         try:
             today_tasks = execute_query(query, (self.uid, date), True)
         except Error:
-            return [1]
+            return None
         else:
             if today_tasks:
                 formatted_list = []

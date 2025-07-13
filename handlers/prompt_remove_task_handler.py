@@ -26,7 +26,7 @@ from handlers.inline_keyboards_module import tasks_keyboard, subtasks_keyboard
 from helpers.user_data_utils import User
 
 # State Definition for ConversationHandlers
-from config import VIEW_TASKS_STATE, PROMPT_REMOVE_TASK_STATE, ACTUAL_REMOVE_TASK_STATE
+from config import VIEW_TASKS_STATE, PROMPT_REMOVE_TASK_STATE
 # Initiating logger
 logging = logging.getLogger(__name__)
 
@@ -41,21 +41,25 @@ async def prompt_remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE)
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
 
-    text_string = f"Your tasks are as follows:\n{"\n".join(user_at_hand.get_user_tasks())}\n\n"\
-        "Just send the row number of the one you wish to delete."
+    user_tasks = user_at_hand.get_user_tasks()
+    if user_tasks:
+        user_tasks_string = "\n".join(user_tasks) 
+    else:
+        user_tasks_string = "\n".join("---NO TASKS ADDED YET---")
+    
     remove_task_markup = subtasks_keyboard()
 
     if prior_main_menu == edited_main_menu:
-        await edit_previous_menu(update, context, text_string, remove_task_markup)
+        await edit_previous_menu(update, context, user_tasks_string, remove_task_markup)
         del user_at_hand
-        return ACTUAL_REMOVE_TASK_STATE
+        return PROMPT_REMOVE_TASK_STATE
     else:
-        delete_previous_menu(update, context)
+        await delete_previous_menu(update, context)
         context.user_data['main_menu_message_id'] = edited_main_menu
-        edit_previous_menu(update, context, text_string, remove_task_markup)
+        await edit_previous_menu(update, context, user_tasks_string, remove_task_markup)
 
         del user_at_hand
-        return ACTUAL_REMOVE_TASK_STATE
+        return PROMPT_REMOVE_TASK_STATE
 
 
 async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,8 +67,11 @@ async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_at_hand = User(user_id)
 
     user_tasks = user_at_hand.get_user_tasks()
-
-    text_string = f"Your tasks are as follows:\n{"\n".join(user_tasks)}"
+    if user_tasks:
+        user_tasks_string = "\n".join(user_tasks) 
+    else:
+        user_tasks_string = "\n".join("---NO TASKS ADDED YET---")
+    text_string = f"Your tasks are as follows:\n{"\n".join(user_tasks_string)}"
     remove_task_markup = subtasks_keyboard()
 
     try:
@@ -73,24 +80,24 @@ async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.info(f"User entered an input that is not a number.")
         error_text_1 = text_string + "\n*❌Your input was not a parsable integer. Try again!*"
 
-        edit_previous_menu(update, context, error_text_1, remove_task_markup)
+        await edit_previous_menu(update, context, error_text_1, remove_task_markup)
         del user_at_hand
-        return ACTUAL_REMOVE_TASK_STATE
+        return PROMPT_REMOVE_TASK_STATE
     except TypeError:
         logging.info(f"User entered an empty input that is probably of type <NoneType>.")
         error_text_2 = text_string + "\n*❌Your input was not a parsable integer. Try again!*"
 
-        edit_previous_menu(update, context, error_text_2, remove_task_markup)
+        await edit_previous_menu(update, context, error_text_2, remove_task_markup)
         del user_at_hand
-        return ACTUAL_REMOVE_TASK_STATE
+        return PROMPT_REMOVE_TASK_STATE
     else:
         if not 0 <= user_input < len(user_tasks):
             logging.info(f"User entered an input out of their tasklist range.")
             error_text_3 = text_string + "\n*❌Your input was out of range. Try again!*"
 
-            edit_previous_menu(update, context, error_text_3, remove_task_markup)
+            await edit_previous_menu(update, context, error_text_3, remove_task_markup)
             del user_at_hand
-            return ACTUAL_REMOVE_TASK_STATE
+            return PROMPT_REMOVE_TASK_STATE
         else:
             to_be_removed_string: str = user_tasks[user_input]
             to_be_removed_task =  to_be_removed_string.split('--')[1].strip()
@@ -101,24 +108,25 @@ async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 logging.info(f"Task `{to_be_removed_task}` was successfully removed for user {user_id}")
                 
                 refetch_list = user_at_hand.get_user_tasks()
-                if len(refetch_list) > 0:
-                    refetch_string = "\n".join(refetch_list)
+                if refetch_list:
+                    refetch_string = "\n".join(refetch_list) 
                 else:
-                    refetch_string = ""
+                    refetch_string = "\n".join("---NO TASKS ADDED YET---")
 
                 success_string = "\n*✅Your task was removed successfully. If you wish you can remove another (assuming there are still tasks to remove.)*" + refetch_string
                 task_menu_markup = tasks_keyboard()
 
-                edit_previous_menu(update, context, success_string, task_menu_markup)
+                await edit_previous_menu(update, context, success_string, task_menu_markup)
+                
                 del user_at_hand
                 return ConversationHandler.END
             else:
                 logging.info("Unsuccessful attempt to remove the task")
                 error_text_4 = text_string + "\n*❌Unsuccessful attempt to remove your task. Try again!*"
 
-                edit_previous_menu(update, context, error_text_4, remove_task_markup)
+                await edit_previous_menu(update, context, error_text_4, remove_task_markup)
                 del user_at_hand
-                return ACTUAL_REMOVE_TASK_STATE
+                return PROMPT_REMOVE_TASK_STATE
                 
             
 
@@ -130,10 +138,8 @@ def get_prompt_remove_task_handler():
         },
         states = {
             PROMPT_REMOVE_TASK_STATE : [
-                CallbackQueryHandler(pattern='^subtasks_return$', callback=return_to_tasks)
-            ],
-            ACTUAL_REMOVE_TASK_STATE : [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, remove_task),
+                CallbackQueryHandler(pattern='^subtasks_return$', callback=return_to_tasks)
             ]
         },
         fallbacks = {
