@@ -46,17 +46,19 @@ async def prompt_remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE)
         user_tasks_string = "\n".join(user_tasks) 
     else:
         user_tasks_string = "\n".join("---NO TASKS ADDED YET---")
-    
+
+    suffix_string = "\n\nTo remove a task from the list below, just send the row number, I'll handle the rest ╰(*°▽°*)╯"
+    whole_string = user_tasks_string + suffix_string
     remove_task_markup = subtasks_keyboard()
 
     if prior_main_menu == edited_main_menu:
-        await edit_previous_menu(update, context, user_tasks_string, remove_task_markup)
+        await edit_previous_menu(update, context, whole_string, remove_task_markup)
         del user_at_hand
         return PROMPT_REMOVE_TASK_STATE
     else:
         await delete_previous_menu(update, context)
         context.user_data['main_menu_message_id'] = edited_main_menu
-        await edit_previous_menu(update, context, user_tasks_string, remove_task_markup)
+        await edit_previous_menu(update, context, whole_string, remove_task_markup)
 
         del user_at_hand
         return PROMPT_REMOVE_TASK_STATE
