@@ -12,7 +12,7 @@ from telegram.ext import (
     ConversationHandler, 
 )
 # DOMESTIC imports ->
-from handlers.common_handlers import (
+from handlers.common.common_handlers import (
     close_all_convos, 
     return_to_menu, 
     delete_previous_menu, 
@@ -20,7 +20,7 @@ from handlers.common_handlers import (
     edit_previous_menu
 )
 from helpers.user_data_utils import User
-from handlers.inline_keyboards_module import main_menu_keyboard, profile_menu_keyboard
+from handlers.common.inline_keyboards_module import main_menu_keyboard, profile_menu_keyboard
 # STATE imports ->
 from config import VIEW_MENU, VIEW_PROF_STATE
 

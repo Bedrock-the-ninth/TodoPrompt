@@ -38,4 +38,20 @@ def subtasks_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
+def reminder_menu_keyboard() -> InlineKeyboardMarkup:
+    keyboard = [
+        [InlineKeyboardButton("⌚ Add Achievement Reminder", callback_data="reminders_add_d_reminder")],
+        [InlineKeyboardButton("⌛ Add Last Call Reminder", callback_data="reminders_add_l_reminder")],
+        [InlineKeyboardButton("🔙 Return to Menu", callback_data="reminders_return")]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def sub_reminder_keyboard() -> InlineKeyboardMarkup:
+    keyboard = [
+        [InlineKeyboardButton("🔙 Return to Reminder Menu", callback_data="sub_reminder_return")]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
 # <<< Inline Keyboard <<<

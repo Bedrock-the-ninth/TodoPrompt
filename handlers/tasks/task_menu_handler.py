@@ -13,14 +13,12 @@ from telegram.ext import (
     MessageHandler
 )
 # DOMESTIC imports ->
-from handlers.common_handlers import (
+from handlers.common.common_handlers import (
     close_all_convos, 
     return_to_menu,
-    delete_previous_menu,
-    send_new_menu,
     edit_previous_menu
 )
-from handlers.inline_keyboards_module import tasks_keyboard
+from handlers.common.inline_keyboards_module import tasks_keyboard
 from helpers.user_data_utils import User
 # State Definition for ConversationHandlers
 from config import VIEW_MENU, VIEW_TASKS_STATE
