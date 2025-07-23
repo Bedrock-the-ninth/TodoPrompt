@@ -49,21 +49,25 @@ if __name__ == "__main__":
     persistence = PicklePersistence(filepath=PERSISTENCE_FILE)
 
     # Defining jobstore for APScheduler ->
-    job_stores_config = {
-        'default': {
-            'type': 'sqlalchemy',
-            'url': f'sqlite:///{DATABASE_FILE.resolve()}'
-        }
-    }
-    apscheduler_instance = AsyncIOScheduler(job_stores=job_stores_config)
-    ptb_queue = JobQueue(apscheduler_instance)
+
+    # job_stores_config = {
+    #     'default': {
+    #         'type': 'sqlalchemy',
+    #         'url': f'sqlite:///{DATABASE_FILE.resolve()}'
+    #     }
+    # }
+
+    job_stores_config = SQLAlchemyJobStore(url=f'sqlite:///{DATABASE_FILE.resolve()}')
+
+    ptb_job_queue = JobQueue()
+    ptb_job_queue.scheduler.add_jobstore(job_stores_config)
 
     """
     Dividing the application and the build process allows for a more logical
     flow of things especially the main_menu and setup_convo assignment.
     This change was suggested by Gemini.
     """
-    app_builder = ApplicationBuilder().token(TOKEN).persistence(persistence).job_queue(ptb_queue)
+    app_builder = ApplicationBuilder().token(TOKEN).persistence(persistence).job_queue(ptb_job_queue)
 
     setup_convo = get_setup_conversation_handler()
     main_menu = get_main_menu_handler()
@@ -80,6 +84,7 @@ if __name__ == "__main__":
     application.add_handler(setup_convo)
     application.add_handler(main_menu)
     application.add_handler(task_menu)
+    application.add_handler(reminders_menu)
     application.add_handler(prompt_add_task)
     application.add_handler(prompt_remove_task)
     application.add_handler(prompt_task_check)

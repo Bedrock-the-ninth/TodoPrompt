@@ -63,7 +63,7 @@ async def add_left_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await edit_previous_menu(update, context, "Unacceptable formatted input. Try again!", sub_reminder_markup)
         return PROMPT_L_REMINDER_STATE
     else:
-        result = set_user_reminder(update, context, "DONE")
+        result = await set_user_reminder(update, context, "DONE")
         
         if result[0] == 1:
             await edit_previous_menu(update, context, "An error occured scheduling the job. Try again!", sub_reminder_keyboard)

@@ -26,7 +26,7 @@ def db_initiator():
         conn.executescript('''
             CREATE TABLE IF NOT EXISTS users(
                 telegram_id INTEGER UNIQUE PRIMARY KEY,
-                utz_offset TEXT,
+                utc_offset TEXT,
                 IANA_timezone TEXT,
                 reminder_done_enabled BOOLEAN DEFAULT FALSE,
                 reminder_left_enabled BOOLEAN DEFAULT FALSE

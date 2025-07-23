@@ -27,7 +27,7 @@ def create_user_profile(uid, user_input):
     user_tz_raw = datetime.now(user_tz).strftime("%z")
     user_tz_offset = f"UTC{user_tz_raw[0:3]}:{user_tz_raw[3:]}"
 
-    execute_query("INSERT INTO users VALUES (?, ?, ?, ?, ?)", params=(uid, user_input, user_tz_offset, 'FALSE', 'FALSE'))
+    execute_query("INSERT INTO users VALUES (?, ?, ?, ?, ?)", params=(uid, user_tz_offset, user_input, 'FALSE', 'FALSE'))
 
 
 def get_offset(offset_string: str) -> timedelta:
