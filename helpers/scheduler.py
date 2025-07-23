@@ -97,17 +97,15 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     else:
         logger.info(f"Removed existing reminder job: {job_id}")
 
-
     context.job_queue.scheduler.add_job(
-        send_reminder_message,
-        'date',
+        func = send_reminder_message,
+        trigger = 'date',
+        args = [context],
         id = job_id,
-        run_date = todays_reminder_time,
-        kwargs = {
-            "chat_id": user_id,
-            "reminder_type": reminder_type_str
+        replace_existing = True,
+        trigger_args= {
+            "run_date" : todays_reminder_time,
         },
-        replace_existing = True
     )
     logger.info(f"Scheduled reminder '{job_id}' for {todays_reminder_time}")
 
