@@ -157,7 +157,7 @@ async def return_to_reminders_menu(update: Update, context: ContextTypes.DEFAULT
 
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
-    info = user_at_hand.info
+    info = user_at_hand._info
 
     if prior_main_menu != message_to_edit_id:
         await delete_previous_menu(update, context)

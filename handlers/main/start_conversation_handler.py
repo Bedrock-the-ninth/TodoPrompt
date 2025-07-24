@@ -12,7 +12,7 @@ from telegram.ext import (
     MessageHandler,
 )
 # DOMESTIC imports ->
-import helpers.user_data_utils as helpers
+from helpers.user_data_utils import User
 # STATE imports ->
 from config import GET_TIMEZONE_STATE
 
@@ -23,8 +23,9 @@ logger = logging.getLogger(__name__)
 # >>> User timezone setup >>>
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
+    user_at_hand = User(user_id)
 
-    if not helpers.is_a_user(user_id):
+    if not user_at_hand._is_a_user:
         await context.bot.send_message(chat_id=user_id,
                                        text="Welcome to TaskPrompt! Please enter your IANA timezone (e.g. \"Asia/Tehran\" or \"Europe/Berlin\").")
         return GET_TIMEZONE_STATE
@@ -36,14 +37,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_timezone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
+    user_at_hand = User(user_id)
     user_input = update.message.text
 
-    if not helpers.is_timezone_valid(user_input):
+    if not user_at_hand.is_timezone_valid(user_input):
         await context.bot.send_message(chat_id=user_id,
                                        text="Doens't look like a valid IANA timezone. You could search for country's IANA and retry.")
         return GET_TIMEZONE_STATE
 
-    helpers.create_user_profile(user_id, user_input)
+    user_at_hand.create_user_profile(user_id, user_input)
     logger.info(f"User {user_id} registered with timezone {user_input}")
 
     await context.bot.send_message(chat_id=user_id, text=f"Your timezone has been set to {user_input}. Tap /menu to use my functionalities.")

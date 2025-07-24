@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 async def view_reminder_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
-    info = user_at_hand.info
+    info = user_at_hand._info
 
     # Setup for editing the reminders menu
     no_instance_text = "No reminders set just yet! You can navigate this menue " \

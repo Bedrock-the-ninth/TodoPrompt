@@ -45,7 +45,7 @@ async def close_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def view_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    This handler, retreives user data through helpers.User class
+    This handler, retreives user data through helpers. User class
     and outputs a formatted string of information. Still a part
     of the main menu conversation.
     """

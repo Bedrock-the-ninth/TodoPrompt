@@ -11,7 +11,8 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes, ConversationHandler
 from telegram.helpers import escape_markdown
 # DOMESTIC imports
-from helpers.user_data_utils import User, get_user_local_time
+from config import FORMAT_STRING_TIME
+from helpers.user_data_utils import User
 from handlers.common.common_handlers import (
     send_reminder, 
     send_new_menu, 
@@ -66,7 +67,7 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
 
     user_at_hand = User(user_id)
     user_iana_tz_str = user_at_hand.user_info().get('IANA_timezone')
-    user_local_time = get_user_local_time(user_id)
+    user_local_time = user_at_hand.get_user_local_time()
 
     reminder_hour, reminder_minute = map(int, user_input.split(":"))
 
@@ -95,16 +96,17 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     except JobLookupError:
         pass
     else:
+        user_at_hand.delete_reminder(reminder_type_str)
         logger.info(f"Removed existing reminder job: {job_id}")
 
-    context.job_queue.scheduler.add_job(
-        func = send_reminder_message,
-        trigger = 'date',
-        run_date = todays_reminder_time,
-        args = [context],
-        id = job_id,
-        replace_existing = True,
+    context.job_queue.run_once(
+        callback = send_reminder_message,
+        when = todays_reminder_time,
+        chat_id = user_id,
+        name = job_id,
+        data = {"reminder_type" : reminder_type_str},
     )
+    user_at_hand.log_reminder(reminder_type_str, todays_reminder_time.strftime(FORMAT_STRING_TIME))
     logger.info(f"Scheduled reminder '{job_id}' for {todays_reminder_time}")
 
     del user_at_hand

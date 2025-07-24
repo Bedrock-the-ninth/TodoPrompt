@@ -1,83 +1,77 @@
+from config import FORMAT_STRING_C, FORMAT_STRING_DATE, FORMAT_STRING_TIME
 from datetime import datetime, timezone, timedelta
 from helpers.db_utils import execute_query
+import logging
 import pytz
 from sqlite3 import Error
 
+logger = logging.getLogger(__name__)
 
-FORMAT_STRING_C = "%Y-%m-%d %H:%M:%S"
-FORMAT_STRING_DATE = "%Y-%m-%d"
-FORMAT_STRING_TIME = "%H:%M:%S"
-
-
-def is_a_user(uid: str):
-    user = execute_query('SELECT * FROM users WHERE telegram_id = ?', (uid,), True)
-
-    if user is None:
-        return False
-    else:
-        return True
-
-
-def is_timezone_valid(user_input: str) -> bool:
-    return (user_input in pytz.all_timezones_set)
-
-
-def create_user_profile(uid, user_input):
-    user_tz = pytz.timezone(user_input)
-    user_tz_raw = datetime.now(user_tz).strftime("%z")
-    user_tz_offset = f"UTC{user_tz_raw[0:3]}:{user_tz_raw[3:]}"
-
-    execute_query("INSERT INTO users VALUES (?, ?, ?, ?, ?)", params=(uid, user_tz_offset, user_input, 'FALSE', 'FALSE'))
-
-
-def get_offset(offset_string: str) -> timedelta:
-    offset_string = offset_string.upper().replace("UTC", "").strip()
-    if not offset_string:
-        return timedelta(0)
-
-    sign = 1
-    if offset_string.startswith('-'):
-        sign = -1
-
-    offset_string = offset_string[1:]
-
-    parts = offset_string.split(':')
-    hours = int(parts[0]) if parts[0] else 0
-    minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
-
-    return timedelta(hours=hours * sign, minutes=minutes * sign)
-
-
-def get_user_local_time(uid: int) -> datetime:
-    string_offset = (execute_query("SELECT utc_offset FROM users WHERE telegram_id = ?", (uid,), True))[0][0]
-
-    offset = get_offset(string_offset)
-    current_utc_time = datetime.now(timezone.utc)
-
-    user_local_time = current_utc_time + offset
-
-    return user_local_time
-    
 
 class User:
     def __init__(self, uid: int):
-        self.uid = uid
-        self.info = self.user_info()
+        self._uid = uid
+        self._is_a_user = self.is_a_user()
+        self._info = self.user_info()
 
     def __str__(self):
         print("__STR__: This class serves to initialize and get the required info about a user.")
-    
+
+    def is_a_user(self):
+        user = execute_query('SELECT * FROM users WHERE telegram_id = ?', (self._uid,), True)
+
+        if user is None:
+            return False
+        else:
+            return True
+
+    def is_timezone_valid(self, user_input: str) -> bool:
+        return (user_input in pytz.all_timezones_set)
+
+    def create_user_profile(self, user_input: str):
+        user_tz = pytz.timezone(user_input)
+        user_tz_raw = datetime.now(user_tz).strftime("%z")
+        user_tz_offset = f"UTC{user_tz_raw[0:3]}:{user_tz_raw[3:]}"
+
+        execute_query("INSERT INTO users VALUES (?, ?, ?, ?, ?)", params=(self._uid, user_tz_offset, user_input, 'FALSE', 'FALSE'))
+
+    def get_offset(self, offset_string: str) -> timedelta:
+        offset_string = offset_string.upper().replace("UTC", "").strip()
+        if not offset_string:
+            return timedelta(0)
+
+        sign = 1
+        if offset_string.startswith('-'):
+            sign = -1
+
+        offset_string = offset_string[1:]
+
+        parts = offset_string.split(':')
+        hours = int(parts[0]) if parts[0] else 0
+        minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
+
+        return timedelta(hours=hours * sign, minutes=minutes * sign)
+
+    def get_user_local_time(self) -> datetime:
+        string_offset = (execute_query("SELECT utc_offset FROM users WHERE telegram_id = ?", (self._uid,), True))[0][0]
+
+        offset = self.get_offset(string_offset)
+        current_utc_time = datetime.now(timezone.utc)
+
+        user_local_time = current_utc_time + offset
+
+        return user_local_time
         
     def get_user_tasks(self) -> list | None:
         
-        date = datetime.strftime(get_user_local_time(self.uid), FORMAT_STRING_DATE) + "%"
+        date = datetime.strftime(self.get_user_local_time(), FORMAT_STRING_DATE) + "%"
         query = (
             "SELECT * FROM tasks "
             "WHERE (user_id = ? AND (created_at LIKE ?)) "
             "ORDER BY priority ASC,created_at ASC "
         )
         try:
-            today_tasks = execute_query(query, (self.uid, date), True)
+            today_tasks = execute_query(query, (self._uid, date), True)
         except Error:
             return None
         else:
@@ -92,16 +86,15 @@ class User:
                 return formatted_list
             else:
                 return None
-        
-    
+           
     def add_user_task(self, task: str, priority: int) -> int:
 
-        user_current_time_string = datetime.strftime(get_user_local_time(self.uid), FORMAT_STRING_C)
+        user_current_time_string = datetime.strftime(self.get_user_local_time(), FORMAT_STRING_C)
 
         if priority in [1, 2, 3]:
             try:
                 execute_query("INSERT INTO tasks (user_id, content, priority, created_at) VALUES (?, ?, ?, ?)",
-                            (self.uid, task, priority, user_current_time_string))
+                            (self._uid, task, priority, user_current_time_string))
             except Error:
                 return 2
         else:
@@ -109,49 +102,46 @@ class User:
 
         return 0
     
-
     def remove_user_task(self, task: str) -> int:
         try:
-            execute_query("DELETE FROM tasks WHERE (user_id = ? AND content = ?)", (self.uid, task))
+            execute_query("DELETE FROM tasks WHERE (user_id = ? AND content = ?)", (self._uid, task))
         except Error:
             return 1
         
         return 0
     
-
     def mark_done_and_return_new_list(self, task: str) -> list | int | None:
-        user_local_date = datetime.strftime(get_user_local_time(self.uid), FORMAT_STRING_DATE) + "%"
+        user_local_date = datetime.strftime(self.get_user_local_time(), FORMAT_STRING_DATE) + "%"
         update_query = "UPDATE tasks SET is_done = TRUE WHERE (user_id = ? AND content = ? AND (created_at LIKE ?))"
         try:
-            execute_query(update_query, (self.uid, task, user_local_date))
+            execute_query(update_query, (self._uid, task, user_local_date))
         except Error:
             return 1
         else:
             refetched_user_tasks = self.get_user_tasks()
             return refetched_user_tasks
 
-
     def user_info(self) -> dict:
-        timezone = execute_query("SELECT utc_offset, IANA_timezone FROM users WHERE telegram_id = ?", (self.uid,), True)[0]
-        tasks_logged = execute_query("SELECT COUNT(id) FROM tasks WHERE user_id = ?", (self.uid,), True)[0][0]
-        tasks_done = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = TRUE)", (self.uid,), True)[0][0]
-        tasks_left = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = FALSE)", (self.uid,), True)[0][0]
+        timezone = execute_query("SELECT utc_offset, IANA_timezone FROM users WHERE telegram_id = ?", (self._uid,), True)[0]
+        tasks_logged = execute_query("SELECT COUNT(id) FROM tasks WHERE user_id = ?", (self._uid,), True)[0][0]
+        tasks_done = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = TRUE)", (self._uid,), True)[0][0]
+        tasks_left = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = FALSE)", (self._uid,), True)[0][0]
         
-        todays_date = datetime.strftime(get_user_local_time(self.uid), FORMAT_STRING_DATE) + "%"
+        todays_date = datetime.strftime(self.get_user_local_time(), FORMAT_STRING_DATE) + "%"
         todays_tasks = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND (created_at LIKE ?))",
-                                    (self.uid, todays_date,), True)[0][0]
+                                    (self._uid, todays_date,), True)[0][0]
         todays_tasks_done = execute_query(
             query = "SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = TRUE AND (created_at LIKE ?))",
-            params = (self.uid, todays_date),
+            params = (self._uid, todays_date),
             fetch = True)[0][0]
         
-        if execute_query("SELECT reminder_done_enabled FROM users WHERE telegram_id = ?", (self.uid,), True)[0][0] == 1:
-            reminder_done = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'DONE')", (self.uid,))[0][0]
+        if execute_query("SELECT reminder_done_enabled FROM users WHERE telegram_id = ?", (self._uid,), True)[0][0] == 'TRUE':
+            reminder_done = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'DONE')", (self._uid,))[0][0]
         else:
             reminder_done = None
         
-        if execute_query("SELECT reminder_left_enabled FROM users WHERE telegram_id = ?", (self.uid,), True)[0][0] == 1:
-            reminder_left = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'LEFT')", (self.uid,), True)[0][0]
+        if execute_query("SELECT reminder_left_enabled FROM users WHERE telegram_id = ?", (self._uid,), True)[0][0] == 'TRUE':
+            reminder_left = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'LEFT')", (self._uid,), True)[0][0]
         else:
             reminder_left = None
 
@@ -169,7 +159,6 @@ class User:
 
         return user_info
 
-
     def get_user_profile(self) -> str:
         info = self.user_info()
 
@@ -184,7 +173,7 @@ class User:
             reminder_left = info.get('reminder_left')
 
         formatted_strings = [
-            f"👤 Your Telegram ID: {self.uid}",
+            f"👤 Your Telegram ID: {self._uid}",
             f"🌐 Your UTC Offset: {info.get('utc_offset')} / {info.get('IANA_timezone')}",
             f"🔲 Total Tasks Logged: {info.get('tasks_logged')}",
             f"✅ Total Tasks Done: {info.get('tasks_done')}",
@@ -197,4 +186,81 @@ class User:
         whole_string = "\n".join(formatted_strings)
         
         return whole_string
-        
+    
+    def check_reminder_state(self, reminder_type, state) -> int:
+        query = "SELECT ? FROM users WHERE telegram_id = ?"
+        parameters = (
+            'reminder_done_enabled' if reminder_type == "DONE" else 'reminder_left_enabled',
+            self._uid
+        )
+
+        try:
+            result = execute_query(query, parameters, fetch=True)
+        except Error as e:
+            logger.error(f"{e}-> Something went wrong checking user's reminder state.")
+            return 2
+        else:
+            if not result:
+                logger.warning("No reminder state found.")
+                return 2
+            else:
+                if state == 1:
+                    return 0 if result[0][0] == 'TRUE' else 1
+                elif state == 0:
+                    return 0 if result[0][0] == 'FALSE' else 1
+
+
+    def set_reminder_state(self, reminder_type, state) -> int:
+        query = "UPDATE users SET ? = ? WHERE telegram_id = ?"
+        parameters = (
+            'reminder_done_enabled' if reminder_type == "DONE" else 'reminder_left_enabled', 
+            'TRUE' if state == 1 else 'FALSE',
+            self._uid    
+        )
+
+        try:
+            execute_query(query, parameters)
+        except Error as e:
+            logger.error(f"{e}-> Something went wrong updating user's reminder flag.")
+            return 1
+        else:
+            logger.info("User's reminder flag was successfully updated!")
+            return 0
+    
+    def log_reminder(self, reminder_type, reminder_time) -> int:
+        query = "INSERT INTO reminders VALUES (?, ?, ?)"
+        parameters = (self._uid, reminder_type, reminder_time)
+
+        try:
+            execute_query(query, parameters)
+        except Error as e:
+            logger.error(f"{e}-> Something went wrong adding user's reminder to the database.")
+            return 1
+        else:
+            logger.error(f"User's reminder was added to the database!")
+            state_update = self.set_reminder_state(reminder_type, 1)
+            if state_update != 0:
+                logger.warning("Failed to update user's reminder state.")
+            return 0
+
+    def delete_reminder(self, reminder_type) -> int:
+        reminder_state = self.check_reminder_state(reminder_type, 1)
+
+        if reminder_state != 0:
+            logger.warning("No active reminder found to delete.")
+            return 1
+        else:
+            query = "DELETE FROM reminders WHERE user_id = ? AND type = ?"
+            parameters = (self._uid, reminder_type)
+
+            try:
+                execute_query(query, parameters)
+            except Error as e:
+                logger.error(f"{e}-> Something went wrong deleting user's reminder from the database.")
+                return 1
+            else:
+                logger.info("User's reminder was successfully deleted from the database!")
+                state_update = self.set_reminder_state(reminder_type, 0)
+                if state_update != 0:
+                    logger.warning("Failed to update user's reminder state.")
+                return 0
