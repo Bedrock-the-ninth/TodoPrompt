@@ -1,4 +1,4 @@
-# common/scheduler.py
+# helpers/scheduler.py
 
 # GENERAL PYTHON imports ->
 from apscheduler.jobstores.base import JobLookupError
@@ -100,12 +100,10 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     context.job_queue.scheduler.add_job(
         func = send_reminder_message,
         trigger = 'date',
+        run_date = todays_reminder_time,
         args = [context],
         id = job_id,
         replace_existing = True,
-        trigger_args= {
-            "run_date" : todays_reminder_time,
-        },
     )
     logger.info(f"Scheduled reminder '{job_id}' for {todays_reminder_time}")
 
