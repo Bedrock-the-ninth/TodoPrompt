@@ -37,16 +37,24 @@ async def send_reminder_message(context: ContextTypes.DEFAULT_TYPE):
 
     if reminder_type == 'DONE':
         reminder_content = escape_markdown(f"🎉 Your achievement reminder for today! Here's your summary:\n\n", version=2)
-        tasks_done_count = f"{user_at_hand._info.get('todays_tasks_done', 0)} / {user_at_hand._info.get('todays_tasks', "NaN")}"
-        reminder_content += escape_markdown(f"You have completed *{tasks_done_count}* tasks so far today!", version=2)
+        if not user_tasks:
+            reminder_content += escape_markdown(f"No tasks were logged today! Try adding some new ones.", version=2)
+        else:
+            tasks_done_count = f"{user_at_hand._info.get('todays_tasks_done', 0)} / {user_at_hand._info.get('todays_tasks', "NaN")}"
+            tasks_done_list = [task for task in user_tasks if "✅" in task]
+            reminder_content += escape_markdown(f"You have completed *{tasks_done_count}* tasks so far today:", version=2)
+            reminder_content += "\n".join([escape_markdown(s, version=2) for s in tasks_done_list])
 
     elif reminder_type == 'LEFT':
         reminder_content = escape_markdown(f"⏰ Last call reminder! Tasks still remaining:\n\n", version=2)
-        tasks_left_list = [task for task in user_tasks if "✅" not in task]
-        if tasks_left_list:
-            reminder_content += "\n".join([escape_markdown(s, version=2) for s in tasks_left_list])
+        if not user_tasks :
+            reminder_content += escape_markdown("No tasks were logged today! Try adding some new ones.", version=2)
         else:
-            reminder_content += escape_markdown("Great job! All tasks are done for today!", version=2)
+            tasks_left_list = [task for task in user_tasks if "✅" not in task]
+            if tasks_left_list:
+                reminder_content += "\n".join([escape_markdown(s, version=2) for s in tasks_left_list])
+            else:
+                reminder_content += escape_markdown("Great job! All tasks are done for today!", version=2)
     
     # No need for Update object for BOT INITIATED interactions
     await send_reminder(
@@ -56,6 +64,8 @@ async def send_reminder_message(context: ContextTypes.DEFAULT_TYPE):
         parse_mode = ParseMode.MARKDOWN_V2,
         chat_id_override = user_id
     )
+
+    user_at_hand.delete_reminder(reminder_type)
     
     del user_at_hand
     logger.info(f"Reminder sent for user {user_id} of type {reminder_type}.")

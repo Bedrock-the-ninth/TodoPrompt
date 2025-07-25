@@ -143,7 +143,7 @@ class User:
             fetch = True)[0][0]
         
         if execute_query("SELECT reminder_done_enabled FROM users WHERE telegram_id = ?", (self._uid,), True)[0][0] == 1:
-            reminder_done = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'DONE')", (self._uid,))[0][0]
+            reminder_done = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'DONE')", (self._uid,), True)[0][0]
         else:
             reminder_done = None
         
@@ -195,7 +195,7 @@ class User:
         return whole_string
     
     def check_reminder_state(self, reminder_type, state) -> int:
-        column_value = 'reminder_done_enabled' if reminder_type == "DONE" else 'reminder_left_enabled',
+        column_value = 'reminder_done_enabled' if reminder_type == "DONE" else 'reminder_left_enabled'
         query = f"SELECT {column_value} FROM users WHERE telegram_id = ?"
         parameters = (self._uid,)
 
@@ -210,7 +210,6 @@ class User:
                 return 2
             else:
                 return 0 if result[0][0] == state else 1
-
 
     def set_reminder_state(self, reminder_type, state) -> int:
         column_value = "reminder_done_enabled" if reminder_type == "DONE" else "reminder_left_enabled"

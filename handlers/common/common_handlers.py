@@ -217,6 +217,5 @@ async def send_reminder(
         )
     except Exception as e:
         logger.error(f"Could not send reminder: {e}")
-    else:
-        context.user_data['new_reminder'] = sent_message.message_id
+
     
