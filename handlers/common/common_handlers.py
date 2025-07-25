@@ -19,14 +19,15 @@ logger = logging.getLogger(__name__)
 
 
 # THE HARDEST PILLS TO SWALLOW (also the rock of the whole project).
-async def send_new_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, content: str, markup: InlineKeyboardMarkup | None):
+async def send_new_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, content: str, markup: InlineKeyboardMarkup | None, parse_mode: ParseMode = None):
     user_id = update.effective_chat.id
     
     try:
         sent_message = await context.bot.send_message(
             chat_id = user_id,
             text = content,
-            reply_markup = markup
+            reply_markup = markup,
+            parse_mode = parse_mode
         )
     except Exception as e:
         logger.error(f"{e}: An exception occured trying to send a new menu.")
@@ -52,7 +53,7 @@ async def delete_previous_menu(update: Update, context: ContextTypes.DEFAULT_TYP
             logger.info(f"Message {last_menu_message_id} was successfully removed from user{user_id}'s chat.")
 
 
-async def edit_previous_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, content: str | None, markup: InlineKeyboardMarkup | None):
+async def edit_previous_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, content: str | None, markup: InlineKeyboardMarkup | None, parse_mode: ParseMode = None):
     user_id = update.effective_chat.id
     to_be_edited_id = context.user_data.get('main_menu_message_id', None)
 
@@ -62,7 +63,8 @@ async def edit_previous_menu(update: Update, context: ContextTypes.DEFAULT_TYPE,
                 chat_id = user_id,
                 message_id = to_be_edited_id,
                 text = content,
-                reply_markup = markup
+                reply_markup = markup,
+                parse_mode = parse_mode
             )
         except BadRequest:
             logger.error(f"Message {to_be_edited_id} in user{user_id}'s chat doesn't exist.")

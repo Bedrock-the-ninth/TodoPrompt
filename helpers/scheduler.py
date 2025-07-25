@@ -69,7 +69,7 @@ async def send_reminder_message(context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"Reminder sent for user {user_id} of type {reminder_type}.")
 
 
-async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, reminder_type_str: str = None) -> tuple:
+async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, reminder_type_str: str = None) -> tuple[int, str | None]:
     user_id = update.effective_chat.id
     user_input = update.message.text
 
@@ -121,7 +121,7 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     return (0, job_id, todays_reminder_time)
 
 
-async def unset_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, reminder_type_str: str):
+async def unset_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, reminder_type_str: str) -> tuple[int, str]:
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
 
@@ -130,7 +130,7 @@ async def unset_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         context.job_queue.scheduler.remove_job(assumed_job_id)
     except JobLookupError:
-        logger.warning(f"No such jobs as {assumed_job_id} was found.")
+        logger.warning(f"No such jobs as {assumed_job_id} were found.")
         return (1, assumed_job_id)
     else:
         reminder_deletion_result = user_at_hand.delete_reminder(reminder_type_str)

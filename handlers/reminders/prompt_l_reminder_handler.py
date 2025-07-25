@@ -57,7 +57,7 @@ async def add_left_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sub_reminder_markup = sub_reminder_keyboard()
 
     try:
-        input_hour, input_minute = map(int, user_input.split(":"))
+        user_input.split(":")
     except (ValueError, TypeError):
         logger.error(f"User {user_id}, input value in wrong format.")
         await edit_previous_menu(update, context, "Unacceptable formatted input. Try again!", sub_reminder_markup)

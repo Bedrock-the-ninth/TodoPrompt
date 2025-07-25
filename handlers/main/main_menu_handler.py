@@ -90,8 +90,6 @@ def get_main_menu_handler() -> ConversationHandler:
         states = {
             VIEW_MENU : [
                 CallbackQueryHandler(pattern='^menu_view_profile$', callback=view_profile),
-                # CallbackQueryHandler(pattern='^menu_view_reminders$', callback=view_reminders),
-                # CallbackQueryHandler(pattern='^menu_settings', callback=view_settings)
             ],
             VIEW_PROF_STATE : [
                 CallbackQueryHandler(pattern='^profile_return$', callback=return_to_menu)

@@ -22,6 +22,8 @@ from handlers.tasks.task_menu_handler import get_task_menu_handler
 from handlers.reminders.reminders_menu_handler import get_reminders_menu_handler
 from handlers.reminders.prompt_d_reminder_handler import get_prompt_d_reminder_handler
 from handlers.reminders.prompt_l_reminder_handler import get_prompt_l_reminder_handler
+# Settings handler ->
+from handlers.settings.settings_handler import get_settings_handler
 
 import helpers.db_utils as helpers
 
@@ -73,22 +75,29 @@ if __name__ == "__main__":
     main_menu = get_main_menu_handler()
     task_menu = get_task_menu_handler()
     reminders_menu = get_reminders_menu_handler()
+    settings_menu = get_settings_handler()
     prompt_add_task = get_prompt_add_task_handler()
     prompt_remove_task = get_prompt_remove_task_handler()
     prompt_task_check = get_prompt_check_task_handler()
     prompt_d_reminder = get_prompt_d_reminder_handler()
     prompt_l_reminder = get_prompt_l_reminder_handler()
 
+
     application = app_builder.build()
 
-    application.add_handler(setup_convo)
-    application.add_handler(main_menu)
-    application.add_handler(task_menu)
-    application.add_handler(reminders_menu)
-    application.add_handler(prompt_add_task)
-    application.add_handler(prompt_remove_task)
-    application.add_handler(prompt_task_check)
-    application.add_handler(prompt_d_reminder)
-    application.add_handler(prompt_l_reminder)
+    application.add_handlers(
+        handlers = [
+            setup_convo, 
+            main_menu, 
+            task_menu, 
+            reminders_menu,
+            settings_menu,
+            prompt_add_task,
+            prompt_remove_task,
+            prompt_task_check,
+            prompt_d_reminder,
+            prompt_l_reminder
+        ]
+    )
 
     application.run_polling()

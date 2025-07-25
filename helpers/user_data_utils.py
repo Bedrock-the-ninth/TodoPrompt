@@ -36,7 +36,33 @@ class User:
         user_tz_raw = datetime.now(user_tz).strftime("%z")
         user_tz_offset = f"UTC{user_tz_raw[0:3]}:{user_tz_raw[3:]}"
 
-        execute_query("INSERT INTO users VALUES (?, ?, ?, ?, ?)", params=(self._uid, user_tz_offset, user_input, 0, 0))
+        if not self.is_a_user():
+            query = "INSERT INTO users VALUES (?, ?, ?, ?, ?)"
+            params = (self._uid, user_tz_offset, user_input, 0, 0)
+        else:
+            query = "UPDATE users SET utc_offset = ?, IANA_timezone = ? WHERE telegram_id = ?"
+            params = (user_tz_offset, user_input, self._uid)
+
+        execute_query(query, params)
+
+    def delete_user_profile(self):
+        query_1 = "DELETE FROM users WHERE telegram_id = ?"
+        query_2 = "DELETE FROM tasks WHERE user_id = ?"
+        param = (self._uid,)
+
+        try:
+            execute_query(query_1, param)
+        except Error as e:
+            logger.error(f"No user with ID {self._uid} was accessible.")
+        else:
+            logger.info("User's row was successfully removed!")
+
+        try:
+            execute_query(query_2, param)
+        except Error as e:
+            logger.error("No tasks for the user with ID {self._uid} was accessible.")
+        else:
+            logger.info("User's tasks were successfully removed!")
 
     def get_offset(self, offset_string: str) -> timedelta:
         offset_string = offset_string.upper().replace("UTC", "").strip()
