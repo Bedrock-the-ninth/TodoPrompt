@@ -54,4 +54,17 @@ def sub_reminder_keyboard() -> InlineKeyboardMarkup:
     ]
 
     return InlineKeyboardMarkup(keyboard)
+
+
+def settings_keyboard() -> InlineKeyboardMarkup:
+    keyboard = [
+        [InlineKeyboardButton("🌐 Change timezone", callback_data="settings_change_timezone")],
+        [
+            InlineKeyboardButton("❌⌚Acheivement Reminder Deletion", callback_data="settings_delete_d_reminder"),
+            InlineKeyboardButton("❌⌛Last Call Reminder Deletion", callback_data="settings_delete_l_reminder")
+        ],
+        [InlineKeyboardButton("❌👤Remove Account Data", callback_data="settings_remove_account")],
+        [InlineKeyboardButton("🔙 Return to Menu", callback_data="settings_return")],
+
+    ]
 # <<< Inline Keyboard <<<

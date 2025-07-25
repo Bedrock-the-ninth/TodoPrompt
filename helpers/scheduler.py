@@ -64,8 +64,6 @@ async def send_reminder_message(context: ContextTypes.DEFAULT_TYPE):
         parse_mode = ParseMode.MARKDOWN_V2,
         chat_id_override = user_id
     )
-
-    user_at_hand.delete_reminder(reminder_type)
     
     del user_at_hand
     logger.info(f"Reminder sent for user {user_id} of type {reminder_type}.")
@@ -108,9 +106,10 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     else:
         logger.info(f"Removed existing reminder job: {job_id} to set up again!")
 
-    context.job_queue.run_once(
+    context.job_queue.run_repeating(
         callback = send_reminder_message,
-        when = todays_reminder_time,
+        interval = timedelta(days=1),
+        first = todays_reminder_time,
         chat_id = user_id,
         name = job_id,
         data = {"reminder_type" : reminder_type_str},
@@ -120,4 +119,25 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     
     del user_at_hand
     return (0, job_id, todays_reminder_time)
+
+
+async def unset_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, reminder_type_str: str):
+    user_id = update.effective_chat.id
+    user_at_hand = User(user_id)
+
+    assumed_job_id = f"reminder_{user_id}_{reminder_type_str}"
+
+    try:
+        context.job_queue.scheduler.remove_job(assumed_job_id)
+    except JobLookupError:
+        logger.warning(f"No such jobs as {assumed_job_id} was found.")
+        return (1, assumed_job_id)
+    else:
+        reminder_deletion_result = user_at_hand.delete_reminder(reminder_type_str)
+        if reminder_deletion_result == 0:
+            logger.info(f"Job with ID {assumed_job_id} was deleted and totally removed from database.")
+            return (0, assumed_job_id)
+        else:
+            logger.warning(f"Unsuccessful attempt on removing the reminder entry from database.")
+            return (2, assumed_job_id)
 # <<< Scheduler Brain <<<

@@ -209,7 +209,7 @@ async def send_reminder(
         return 1
 
     try:
-        sent_message = await bot_instance.send_message(
+        await bot_instance.send_message(
             chat_id = target_user_id,
             text = content,
             reply_markup = markup,
@@ -217,5 +217,3 @@ async def send_reminder(
         )
     except Exception as e:
         logger.error(f"Could not send reminder: {e}")
-
-    
