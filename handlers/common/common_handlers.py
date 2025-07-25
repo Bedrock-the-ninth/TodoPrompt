@@ -169,16 +169,19 @@ async def return_to_reminders_menu(update: Update, context: ContextTypes.DEFAULT
     " (or /settings) to remove the once you've set some.  O.O\n"
     some_instances_text = "You've set the following reminders:\n"
 
+    reminder_done_state = user_at_hand.check_reminder_state('DONE', 1)
+    reminder_left_state = user_at_hand.check_reminder_state('LEFT', 1)
+
     flag = 0
-    if (info['reminder_done'] is None) and (info['reminder_left'] is None):
+    if (reminder_done_state != 0) and (reminder_left_state != 0):
         no_instance_text += "\n".join("--NO REMINDERS ADDED YET--")
         flag = 1
-    elif (type(info['reminder_done']) is str) and (info['reminder_left'] is None):
-        some_instances_text += f"⌚ Achievement Reminder Is Set For: {info['reminder_done']}"
-    elif (info['reminder_done'] is None) and (type(info['reminder_left']) is str):
+    elif (reminder_done_state == 0) and (reminder_left_state != 0):
+        some_instances_text += f"⌚ Achievement Reminder Is Set For: {info.get('reminder_done')}"
+    elif (reminder_done_state != 0) and (reminder_left_state == 0):
         some_instances_text += f"⌛ Last Call Reminder Is Set For: {info['reminder_left']}"
     else:
-        some_instances_text += f"⌚ Achievement Reminder Is Set For: {info['reminder_done']}\n ⌛ Last Call Reminder Is Set For: {info['reminder_left']}"
+        some_instances_text += f"⌚ Achievement Reminder Is Set For: {info.get('reminder_done', None)}\n ⌛ Last Call Reminder Is Set For: {info['reminder_left']}"
 
     reminder_markup = reminder_menu_keyboard()
 

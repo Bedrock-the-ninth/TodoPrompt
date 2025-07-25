@@ -12,7 +12,10 @@ class User:
     def __init__(self, uid: int):
         self._uid = uid
         self._is_a_user = self.is_a_user()
-        self._info = self.user_info()
+        if self._is_a_user:
+            self._info = self.user_info()
+        else:
+            self._info = None
 
     def __str__(self):
         print("__STR__: This class serves to initialize and get the required info about a user.")
@@ -33,7 +36,7 @@ class User:
         user_tz_raw = datetime.now(user_tz).strftime("%z")
         user_tz_offset = f"UTC{user_tz_raw[0:3]}:{user_tz_raw[3:]}"
 
-        execute_query("INSERT INTO users VALUES (?, ?, ?, ?, ?)", params=(self._uid, user_tz_offset, user_input, 'FALSE', 'FALSE'))
+        execute_query("INSERT INTO users VALUES (?, ?, ?, ?, ?)", params=(self._uid, user_tz_offset, user_input, 0, 0))
 
     def get_offset(self, offset_string: str) -> timedelta:
         offset_string = offset_string.upper().replace("UTC", "").strip()
@@ -53,14 +56,18 @@ class User:
         return timedelta(hours=hours * sign, minutes=minutes * sign)
 
     def get_user_local_time(self) -> datetime:
-        string_offset = (execute_query("SELECT utc_offset FROM users WHERE telegram_id = ?", (self._uid,), True))[0][0]
+        try:
+            user_tz_string = execute_query("SELECT IANA_timezone FROM users WHERE telegram_id = ?", (self._uid,), True)[0][0]
+        except (TypeError, ValueError, IndexError, Error) as e:
+            logger.error(f"No timezone accessible: {e}")
+            user_tz_string = None
 
-        offset = self.get_offset(string_offset)
-        current_utc_time = datetime.now(timezone.utc)
-
-        user_local_time = current_utc_time + offset
-
-        return user_local_time
+        if user_tz_string:
+            user_tz = pytz.timezone(user_tz_string)
+            return datetime.now(user_tz)
+        else:
+            logger.warning("No IANA timezone found, defaulting to UTC.")
+            return datetime.now(pytz.utc)
         
     def get_user_tasks(self) -> list | None:
         
@@ -124,29 +131,29 @@ class User:
     def user_info(self) -> dict:
         timezone = execute_query("SELECT utc_offset, IANA_timezone FROM users WHERE telegram_id = ?", (self._uid,), True)[0]
         tasks_logged = execute_query("SELECT COUNT(id) FROM tasks WHERE user_id = ?", (self._uid,), True)[0][0]
-        tasks_done = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = TRUE)", (self._uid,), True)[0][0]
-        tasks_left = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = FALSE)", (self._uid,), True)[0][0]
+        tasks_done = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = 1)", (self._uid,), True)[0][0]
+        tasks_left = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = 0)", (self._uid,), True)[0][0]
         
         todays_date = datetime.strftime(self.get_user_local_time(), FORMAT_STRING_DATE) + "%"
         todays_tasks = execute_query("SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND (created_at LIKE ?))",
                                     (self._uid, todays_date,), True)[0][0]
         todays_tasks_done = execute_query(
-            query = "SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = TRUE AND (created_at LIKE ?))",
+            query = "SELECT COUNT(id) FROM tasks WHERE (user_id = ? AND is_done = 1 AND (created_at LIKE ?))",
             params = (self._uid, todays_date),
             fetch = True)[0][0]
         
-        if execute_query("SELECT reminder_done_enabled FROM users WHERE telegram_id = ?", (self._uid,), True)[0][0] == 'TRUE':
+        if execute_query("SELECT reminder_done_enabled FROM users WHERE telegram_id = ?", (self._uid,), True)[0][0] == 1:
             reminder_done = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'DONE')", (self._uid,))[0][0]
         else:
             reminder_done = None
         
-        if execute_query("SELECT reminder_left_enabled FROM users WHERE telegram_id = ?", (self._uid,), True)[0][0] == 'TRUE':
+        if execute_query("SELECT reminder_left_enabled FROM users WHERE telegram_id = ?", (self._uid,), True)[0][0] == 1:
             reminder_left = execute_query("SELECT reminder_time_locale FROM reminders WHERE (user_id = ? AND type = 'LEFT')", (self._uid,), True)[0][0]
         else:
             reminder_left = None
 
         user_info = {
-            "utc_offset": timezone[0] if timezone else "UTC",
+            "utc_offset": timezone[0] if timezone else "UTC+00:00",
             "IANA_timezone": timezone[1] if timezone else "NULL",
             "tasks_logged": tasks_logged if tasks_logged else 0,
             "tasks_done": tasks_done if tasks_done else 0,
@@ -188,11 +195,9 @@ class User:
         return whole_string
     
     def check_reminder_state(self, reminder_type, state) -> int:
-        query = "SELECT ? FROM users WHERE telegram_id = ?"
-        parameters = (
-            'reminder_done_enabled' if reminder_type == "DONE" else 'reminder_left_enabled',
-            self._uid
-        )
+        column_value = 'reminder_done_enabled' if reminder_type == "DONE" else 'reminder_left_enabled',
+        query = f"SELECT {column_value} FROM users WHERE telegram_id = ?"
+        parameters = (self._uid,)
 
         try:
             result = execute_query(query, parameters, fetch=True)
@@ -204,19 +209,13 @@ class User:
                 logger.warning("No reminder state found.")
                 return 2
             else:
-                if state == 1:
-                    return 0 if result[0][0] == 'TRUE' else 1
-                elif state == 0:
-                    return 0 if result[0][0] == 'FALSE' else 1
+                return 0 if result[0][0] == state else 1
 
 
     def set_reminder_state(self, reminder_type, state) -> int:
-        query = "UPDATE users SET ? = ? WHERE telegram_id = ?"
-        parameters = (
-            'reminder_done_enabled' if reminder_type == "DONE" else 'reminder_left_enabled', 
-            'TRUE' if state == 1 else 'FALSE',
-            self._uid    
-        )
+        column_value = "reminder_done_enabled" if reminder_type == "DONE" else "reminder_left_enabled"
+        query = f"UPDATE users SET {column_value} = ? WHERE telegram_id = ?"
+        parameters = (state, self._uid)
 
         try:
             execute_query(query, parameters)
@@ -228,16 +227,21 @@ class User:
             return 0
     
     def log_reminder(self, reminder_type, reminder_time) -> int:
-        query = "INSERT INTO reminders VALUES (?, ?, ?)"
-        parameters = (self._uid, reminder_type, reminder_time)
+        reminder_state = self.check_reminder_state(reminder_type, 1)
 
+        if reminder_state != 0:
+            query = "INSERT INTO reminders VALUES (?, ?, ?)"
+        else:
+            query = "UPDATE reminders SET VALUES (?, ?, ?)"
+
+        parameters = (self._uid, reminder_type, reminder_time)
         try:
             execute_query(query, parameters)
         except Error as e:
             logger.error(f"{e}-> Something went wrong adding user's reminder to the database.")
             return 1
         else:
-            logger.error(f"User's reminder was added to the database!")
+            logger.info(f"User's reminder was added to the database!")
             state_update = self.set_reminder_state(reminder_type, 1)
             if state_update != 0:
                 logger.warning("Failed to update user's reminder state.")

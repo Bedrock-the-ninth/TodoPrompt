@@ -11,7 +11,7 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes, ConversationHandler
 from telegram.helpers import escape_markdown
 # DOMESTIC imports
-from config import FORMAT_STRING_TIME
+from config import FORMAT_STRING_C
 from helpers.user_data_utils import User
 from handlers.common.common_handlers import (
     send_reminder, 
@@ -37,7 +37,7 @@ async def send_reminder_message(context: ContextTypes.DEFAULT_TYPE):
 
     if reminder_type == 'DONE':
         reminder_content = escape_markdown(f"🎉 Your achievement reminder for today! Here's your summary:\n\n", version=2)
-        tasks_done_count = f"{user_at_hand.user_info().get('todays_tasks_done', 0)} / {user_at_hand.user_info().get('todays_tasks', "NaN")}"
+        tasks_done_count = f"{user_at_hand._info.get('todays_tasks_done', 0)} / {user_at_hand._info.get('todays_tasks', "NaN")}"
         reminder_content += escape_markdown(f"You have completed *{tasks_done_count}* tasks so far today!", version=2)
 
     elif reminder_type == 'LEFT':
@@ -66,7 +66,7 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     user_input = update.message.text
 
     user_at_hand = User(user_id)
-    user_iana_tz_str = user_at_hand.user_info().get('IANA_timezone')
+    user_iana_tz_str = user_at_hand._info.get('IANA_timezone')
     user_local_time = user_at_hand.get_user_local_time()
 
     reminder_hour, reminder_minute = map(int, user_input.split(":"))
@@ -96,8 +96,7 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     except JobLookupError:
         pass
     else:
-        user_at_hand.delete_reminder(reminder_type_str)
-        logger.info(f"Removed existing reminder job: {job_id}")
+        logger.info(f"Removed existing reminder job: {job_id} to set up again!")
 
     context.job_queue.run_once(
         callback = send_reminder_message,
@@ -106,9 +105,9 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
         name = job_id,
         data = {"reminder_type" : reminder_type_str},
     )
-    user_at_hand.log_reminder(reminder_type_str, todays_reminder_time.strftime(FORMAT_STRING_TIME))
+    user_at_hand.log_reminder(reminder_type_str, todays_reminder_time.strftime(FORMAT_STRING_C))
     logger.info(f"Scheduled reminder '{job_id}' for {todays_reminder_time}")
-
+    
     del user_at_hand
     return (0, job_id, todays_reminder_time)
 # <<< Scheduler Brain <<<

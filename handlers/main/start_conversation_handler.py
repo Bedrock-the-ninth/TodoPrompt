@@ -45,7 +45,7 @@ async def get_timezone(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                        text="Doens't look like a valid IANA timezone. You could search for country's IANA and retry.")
         return GET_TIMEZONE_STATE
 
-    user_at_hand.create_user_profile(user_id, user_input)
+    user_at_hand.create_user_profile(user_input)
     logger.info(f"User {user_id} registered with timezone {user_input}")
 
     await context.bot.send_message(chat_id=user_id, text=f"Your timezone has been set to {user_input}. Tap /menu to use my functionalities.")

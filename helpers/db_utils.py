@@ -28,15 +28,15 @@ def db_initiator():
                 telegram_id INTEGER UNIQUE PRIMARY KEY,
                 utc_offset TEXT,
                 IANA_timezone TEXT,
-                reminder_done_enabled BOOLEAN DEFAULT FALSE,
-                reminder_left_enabled BOOLEAN DEFAULT FALSE
+                reminder_done_enabled BOOLEAN DEFAULT 0,
+                reminder_left_enabled BOOLEAN DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS tasks(
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, 
                 user_id INTEGER, 
                 content TEXT,
                 priority INTEGER CHECK (priority IN (1, 2, 3)), 
-                is_done BOOLEAN DEFAULT FALSE, 
+                is_done BOOLEAN DEFAULT 0, 
                 created_at TIMESTAMP, 
                 FOREIGN KEY (user_id) REFERENCES users(telegram_id));
             CREATE TABLE IF NOT EXISTS reminders(
