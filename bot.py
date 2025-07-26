@@ -52,20 +52,15 @@ if __name__ == "__main__":
 
     # Defining jobstore for APScheduler ->
 
-    # job_stores_config = {
-    #     'default': {
-    #         'type': 'sqlalchemy',
-    #         'url': f'sqlite:///{DATABASE_FILE.resolve()}'
-    #     }
-    # }
-    ptb_job_queue = JobQueue()
+    job_stores_config = {
+        'default': {
+            'type': 'sqlalchemy',
+            'url': f'sqlite:///{DATABASE_FILE.resolve()}'
+        }
+    }
     
+    ptb_job_queue = JobQueue()
     # Add the SQLAlchemy jobstore to the scheduler
-    ptb_job_queue.scheduler.add_jobstore(
-        SQLAlchemyJobStore(url=f'sqlite:///{DATABASE_FILE.resolve()}'),
-        alias='default'
-    )
-
     """
     Dividing the application and the build process allows for a more logical
     flow of things especially the main_menu and setup_convo assignment.
@@ -86,7 +81,8 @@ if __name__ == "__main__":
 
 
     application = app_builder.build()
-    logger.info(f"All jobs are as follows {application.job_queue.scheduler.get_jobs()}")
+    application.job_queue.scheduler.add_jobstore(SQLAlchemyJobStore(url=f"sqlite:///{DATABASE_FILE.resolve()}"))
+    logger.info(f"Jobstores are as follows: {application.job_queue.scheduler._jobstores}")
 
     application.add_handlers(
         handlers = [

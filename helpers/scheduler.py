@@ -119,8 +119,8 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     user_at_hand.log_reminder(reminder_type_str, todays_reminder_time.strftime(FORMAT_STRING_C))
     logger.info(f"Scheduled reminder '{job_id}' for {todays_reminder_time}")
     
-    jobs = context.job_queue.scheduler.get_jobs()
-    logger.info(f"These jobs are scheduled: {jobs}")
+    jobs = context.job_queue.scheduler._jobstores
+    logger.info(f"These are the jobstores: {jobs}")
 
     del user_at_hand
     return (0, job_id, todays_reminder_time)
