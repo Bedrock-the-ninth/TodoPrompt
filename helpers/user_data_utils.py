@@ -212,8 +212,8 @@ class User:
             f"✅ Total Tasks Done: {info.get('tasks_done')}",
             f"❌ Total Tasks Left: {info.get('tasks_left')}",
             f"☀️ Today's Tasks Done: A number of {info.get('todays_tasks_done', 0)} tasks were marked done out of {info.get('todays_tasks', 0)}",
-            f"⌚ Achievement Reminder Is Set For: {reminder_done}",
-            f"⌛ Last Call Reminder Is Set For: {reminder_left}"
+            f"⌚ Achievement Reminder is set for: {reminder_done}",
+            f"⌛ Last Call Reminder is set for: {reminder_left}"
         ]
 
         whole_string = "\n".join(formatted_strings)
@@ -256,10 +256,11 @@ class User:
 
         if reminder_state != 0:
             query = "INSERT INTO reminders VALUES (?, ?, ?)"
+            parameters = (self._uid, reminder_type, reminder_time)
         else:
-            query = "UPDATE reminders SET VALUES (?, ?, ?)"
+            query = "UPDATE reminders SET type = ?, reminder_time_locale = ? WHERE user_id = ?"
+            parameters = (reminder_type, reminder_time, self._uid)
 
-        parameters = (self._uid, reminder_type, reminder_time)
         try:
             execute_query(query, parameters)
         except Error as e:

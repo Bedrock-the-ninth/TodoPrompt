@@ -58,11 +58,13 @@ if __name__ == "__main__":
     #         'url': f'sqlite:///{DATABASE_FILE.resolve()}'
     #     }
     # }
-
-    job_stores_config = SQLAlchemyJobStore(url=f'sqlite:///{DATABASE_FILE.resolve()}')
-
     ptb_job_queue = JobQueue()
-    ptb_job_queue.scheduler.add_jobstore(job_stores_config)
+    
+    # Add the SQLAlchemy jobstore to the scheduler
+    ptb_job_queue.scheduler.add_jobstore(
+        SQLAlchemyJobStore(url=f'sqlite:///{DATABASE_FILE.resolve()}'),
+        alias='default'
+    )
 
     """
     Dividing the application and the build process allows for a more logical
@@ -84,6 +86,7 @@ if __name__ == "__main__":
 
 
     application = app_builder.build()
+    logger.info(f"All jobs are as follows {application.job_queue.scheduler.get_jobs()}")
 
     application.add_handlers(
         handlers = [

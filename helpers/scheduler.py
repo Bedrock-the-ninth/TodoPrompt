@@ -2,6 +2,7 @@
 
 # GENERAL PYTHON imports ->
 from apscheduler.jobstores.base import JobLookupError
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from datetime import datetime, timedelta
 import logging
 from pytz import timezone
@@ -19,7 +20,6 @@ from handlers.common.common_handlers import (
 )
 
 logger = logging.getLogger(__name__)
-
 
 # >>> Scheduler Brain >>>
 async def send_reminder_message(context: ContextTypes.DEFAULT_TYPE):
@@ -99,12 +99,14 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     # Setting up job info
     job_id = f"reminder_{user_id}_{reminder_type_str}"
 
-    try:
-        context.job_queue.scheduler.remove_job(job_id)
-    except JobLookupError:
-        pass
+    # Remove job if it exists
+    existing_jobs = context.job_queue.get_jobs_by_name(job_id)
+    if existing_jobs:
+        for job in existing_jobs:
+            job.schedule_removal()
+        logger.info(f"Removed existing reminder job(s) with name: {job_id}")
     else:
-        logger.info(f"Removed existing reminder job: {job_id} to set up again!")
+        logger.info(f"No existing job found with name: {job_id}")
 
     context.job_queue.run_repeating(
         callback = send_reminder_message,
@@ -117,27 +119,42 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     user_at_hand.log_reminder(reminder_type_str, todays_reminder_time.strftime(FORMAT_STRING_C))
     logger.info(f"Scheduled reminder '{job_id}' for {todays_reminder_time}")
     
+    jobs = context.job_queue.scheduler.get_jobs()
+    logger.info(f"These jobs are scheduled: {jobs}")
+
     del user_at_hand
     return (0, job_id, todays_reminder_time)
 
 
-async def unset_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, reminder_type_str: str) -> tuple[int, str]:
+async def unset_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, reminder_type_str: str) -> tuple[int | str]:
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
+    
+    job_schedule_removal = 0
+    database_reminder_removal = 0
+        
+    jobs = context.job_queue.scheduler.get_jobs()
+    logger.info(f"These jobs are scheduled: {jobs}")
 
     assumed_job_id = f"reminder_{user_id}_{reminder_type_str}"
 
-    try:
-        context.job_queue.scheduler.remove_job(assumed_job_id)
-    except JobLookupError:
-        logger.warning(f"No such jobs as {assumed_job_id} were found.")
-        return (1, assumed_job_id)
+    existing_jobs = context.job_queue.get_jobs_by_name(assumed_job_id)
+
+    if not existing_jobs:
+        logger.info(f"No existing job found with name: {assumed_job_id}")
     else:
-        reminder_deletion_result = user_at_hand.delete_reminder(reminder_type_str)
-        if reminder_deletion_result == 0:
-            logger.info(f"Job with ID {assumed_job_id} was deleted and totally removed from database.")
-            return (0, assumed_job_id)
-        else:
-            logger.warning(f"Unsuccessful attempt on removing the reminder entry from database.")
-            return (2, assumed_job_id)
+        for job in existing_jobs:
+            job.schedule_removal()
+        logger.info(f"Removed existing reminder job(s) with name: {assumed_job_id}")
+        job_schedule_removal = 1
+
+    database_deletion_result = user_at_hand.delete_reminder(reminder_type_str)
+    if database_deletion_result == 0:
+        logger.info(f"Job with ID {assumed_job_id} was removed from database.")
+        database_reminder_removal = 1
+    else:
+        logger.warning(f"Unsuccessful attempt on removing the reminder entry from database.")
+        return (2, assumed_job_id)
+    
+    return (job_schedule_removal, database_reminder_removal, assumed_job_id)
 # <<< Scheduler Brain <<<

@@ -5,7 +5,6 @@ import logging
 from asyncio import sleep
 # TELEGRAM BOT imports ->
 from telegram import Update
-from telegram.constants import ParseMode
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
@@ -14,7 +13,6 @@ from telegram.ext import (
     filters,
     MessageHandler
 )
-from telegram.helpers import escape_markdown
 # DOMESTIC imports ->
 from config import VIEW_MENU, VIEW_SETTINGS, RESET_TIMEZONE
 from handlers.common.common_handlers import (
@@ -32,19 +30,20 @@ logger = logging.getLogger(__name__)
 
 
 async def view_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = escape_markdown("⚙️*Here's the settings menu:*", version=2)
+    text = "⚙️*Here's the settings menu:*"
     settings_markup = settings_keyboard()
-    parse_mode = ParseMode.MARKDOWN_V2 # Define parse_mode once
 
     if update.callback_query:
         query = update.callback_query
-        await query.answer() 
-        await edit_previous_menu(update, context, text, settings_markup, parse_mode=parse_mode)
+        await query.answer()
+        context.user_data['main_menu_message_id'] = query.message.message_id
+
+        await edit_previous_menu(update, context, text, settings_markup)
     elif update.message and update.message.text.startswith('/settings'):
-        await send_new_menu(update, context, text, settings_markup, parse_mode=parse_mode)
+        await send_new_menu(update, context, text, settings_markup)
     else:
         logger.warning(f"view_settings_menu called with unhandled update type for user {update.effective_chat.id}")
-        await send_new_menu(update, context, text, settings_markup, parse_mode=parse_mode)
+        await send_new_menu(update, context, text, settings_markup)
 
     return VIEW_SETTINGS
 
@@ -53,53 +52,63 @@ async def reset_timezone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
     user_input = update.message.text
-    parse_mode = ParseMode.MARKDOWN_V2
 
     if not user_at_hand.is_timezone_valid(user_input):
-        text = escape_markdown("Doens't look like a valid IANA timezone. You could search for country's IANA and retry.", version=2)
+        text = "Doens't look like a valid IANA timezone. You could search for country's IANA and retry."
         sub_settings_markup = sub_settings_keyboard()
-        await edit_previous_menu(update, context, text, sub_settings_markup, parse_mode)
+        await edit_previous_menu(update, context, text, sub_settings_markup)
         return RESET_TIMEZONE
 
     user_at_hand.create_user_profile(user_input)
     logger.info(f"User {user_id} reset timezone into {user_input}")
 
-    success_text = escape_markdown(f"Your timezone has been set to {user_input}. Tap /menu or use the return button to use my functionalities.", version=2)
+    success_text = f"Your timezone has been set to {user_input}. Tap /menu or use the return button to use my functionalities."
     settings_markup = settings_keyboard()
-    await edit_previous_menu(update, context, success_text, settings_markup, parse_mode)
+    await edit_previous_menu(update, context, success_text, settings_markup)
     return VIEW_SETTINGS
 
 
 async def change_timezone(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = escape_markdown("To reset or override the previously input timezone, send your IANA timezone again (e.g. \"Asia/Tehran\" or \"Europe/Berlin\").", version=2)
+    text = "To reset or override the previously input timezone, send your IANA timezone again (e.g. \"Asia/Tehran\" or \"Europe/Berlin\")."
     sub_settings_markup = sub_settings_keyboard()
 
-    await edit_previous_menu(update, context, text, sub_settings_markup, ParseMode.MARKDOWN_V2)
+    await edit_previous_menu(update, context, text, sub_settings_markup)
     return RESET_TIMEZONE
 
 
 async def delete_d_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    removing_reminder_result = await unset_user_reminder(update, context, "DONE")
+    query = update.callback_query
+    await query.answer()
+    context.user_data['main_menu_message_id'] = query.message.message_id
 
-    if removing_reminder_result[0] != 0:
-        text = "Achievement Reminder was not successfully removed!❌ \n⚙️Back to settings menu..."
-    else:
-        text = "Achievemnt Reminder was successfully removed!✅ \n⚙️Back to settings menu..."
+    removing_reminder_result = await unset_user_reminder(update, context, "DONE")
+    assumed_job_id = removing_reminder_result[2]
+    schedule_removal_text = f"{assumed_job_id} was successfully unscheduled ✅" if removing_reminder_result[0] == 1 else f"{assumed_job_id} was not scheduled! ❌"
+    reminder_entry_removal_text = f"{assumed_job_id}'s entry was successfully removed from database ✅" if removing_reminder_result[1] == 1 else f"{assumed_job_id}'s entry was not found on the database ❌"
+
+    final_text = schedule_removal_text + "\n" + reminder_entry_removal_text + "\n" + "⚙️ Back to Settings..."
+
     settings_markup = settings_keyboard()
 
-    await edit_previous_menu(update, context, text, settings_markup, ParseMode.MARKDOWN_V2)
+    await edit_previous_menu(update, context, final_text, settings_markup)
     return VIEW_SETTINGS
 
 async def delete_l_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    removing_reminder_result = await unset_user_reminder(update, context, "LEFT")
+    query = update.callback_query
+    await query.answer()
+    context.user_data['main_menu_message_id'] = query.message.message_id
     
-    if removing_reminder_result[0] != 0:
-        text = "Last Call Reminder was not successfully removed!❌ \n⚙️Back to settings menu..."
-    else:
-        text = "Last Call Reminder was successfully removed!✅ \n⚙️Back to settings menu..."
+    removing_reminder_result = await unset_user_reminder(update, context, "LEFT")
+
+    assumed_job_id = removing_reminder_result[2]
+    schedule_removal_text = f"{assumed_job_id} was successfully unscheduled ✅" if removing_reminder_result[0] == 1 else f"{assumed_job_id} was not scheduled! ❌"
+    reminder_entry_removal_text = f"{assumed_job_id}'s entry was successfully removed from database ✅" if removing_reminder_result[1] == 1 else f"{assumed_job_id}'s entry was not found on the database ❌"
+
+    final_text = schedule_removal_text + "\n" + reminder_entry_removal_text + "\n" + "⚙️ Back to Settings..."
+
     settings_markup = settings_keyboard()
 
-    await edit_previous_menu(update, context, text, settings_markup, ParseMode.MARKDOWN_V2)
+    await edit_previous_menu(update, context, final_text, settings_markup)
     return VIEW_SETTINGS
 
 
@@ -115,9 +124,9 @@ async def remove_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await unset_user_reminder(update, context, "LEFT")
 
     # Final Interaction:
-    text = escape_markdown("You are now stir clear of me. *_Goodbye friend!_*🥲\nIt would be a good idea to clear our history and then /start the chat again, just in case.", version=2)
+    text = "You are now stir clear of me. *_Goodbye friend!_*🥲\nIt would be a good idea to clear our history and then /start the chat again, just in case."
     await delete_previous_menu(update, context)
-    await send_new_menu(update, context, text, None, ParseMode.MARKDOWN_V2)
+    await send_new_menu(update, context, text, None)
 
     # PicklePersistence info removal
     context.user_data.clear()
