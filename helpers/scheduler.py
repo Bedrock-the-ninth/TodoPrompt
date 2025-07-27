@@ -66,13 +66,15 @@ async def set_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     job_id = f"reminder_{user_id}_{reminder_type_str}"
 
     # Remove job if it exists
-    existing_jobs = context.job_queue.get_jobs_by_name(job_id)
-    if existing_jobs:
-        for job in existing_jobs:
-            job.schedule_removal()
-        logger.info(f"Removed existing reminder job(s) with name: {job_id}")
-    else:
+    existing_jobs = context.job_queue.scheduler.get_jobs(jobstore='default')
+    jobs_to_remove = [job for job in existing_jobs if job.id == job_id]
+
+    if not jobs_to_remove:
         logger.info(f"No existing job found with name: {job_id}")
+    else:
+        for job in jobs_to_remove:
+            job.remove()
+        logger.info(f"Removed existing reminder job(s) with name: {job_id}")
 
     context.job_queue.scheduler.add_job(
         func = send_reminder_runner,
@@ -119,7 +121,6 @@ async def unset_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE
         database_reminder_removal = 1
     else:
         logger.warning(f"Unsuccessful attempt on removing the reminder entry from database.")
-        return (2, assumed_job_id)
     
     return (job_schedule_removal, database_reminder_removal, assumed_job_id)
 # <<< Scheduler Brain <<<

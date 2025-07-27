@@ -86,7 +86,4 @@ if __name__ == "__main__":
         ]
     )
 
-    try:
-        application.run_polling()
-    finally: 
-        ptb_job_queue.scheduler.shutdown()
+    application.run_polling()

@@ -35,12 +35,12 @@ def determine_message(user_id: int, reminder_type: str):
     return reminder_content
 
 
-def send_reminder_runner(user_id, reminder_type):
+async def send_reminder_runner(user_id, reminder_type):
     bot = Bot(token=TOKEN)
     reminder_content = determine_message(user_id, reminder_type)
 
     try:
-        bot.send_message(user_id, reminder_content, parse_mode="MarkdownV2")
+        await bot.send_message(user_id, reminder_content, parse_mode="MarkdownV2")
     except Exception as e:
         logger.error(f"Could not send reminder: {e}")
     logger.info(f"Reminder sent for user {user_id} of type {reminder_type}.")
