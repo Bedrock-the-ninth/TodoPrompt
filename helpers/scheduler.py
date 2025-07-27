@@ -100,9 +100,6 @@ async def unset_user_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE
     job_schedule_removal = 0
     database_reminder_removal = 0
         
-    jobs = context.job_queue.scheduler.get_jobs()
-    logger.info(f"These jobs are scheduled: {jobs}")
-
     assumed_job_id = f"reminder_{user_id}_{reminder_type_str}"
 
     existing_jobs = context.job_queue.scheduler.get_jobs(jobstore='default')
