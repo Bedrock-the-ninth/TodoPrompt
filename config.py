@@ -1,3 +1,17 @@
+# Load TOKEN from .env file ->
+from dotenv import load_dotenv
+from os import getenv
+
+load_dotenv()
+TOKEN = getenv("BOT_TOKEN")
+
+# Loading database and pickle filepaths:
+from pathlib import Path
+
+DATA_DIR = Path('data')
+PERSISTENCE_FILE = DATA_DIR / "bot_data.pickle"
+DATABASE_FILE = DATA_DIR / "database.db"
+
 # Global Formatting Strings for datetime.strftime ->
 FORMAT_STRING_C = "%Y-%m-%d %H:%M:%S"
 FORMAT_STRING_DATE = "%Y-%m-%d"

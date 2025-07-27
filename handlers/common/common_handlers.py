@@ -194,28 +194,3 @@ async def return_to_reminders_menu(update: Update, context: ContextTypes.DEFAULT
     
     del user_at_hand
     return ConversationHandler.END
-
-
-async def send_reminder(
-        context: ContextTypes.DEFAULT_TYPE, 
-        content: str, 
-        chat_id_override: int | None = None, 
-        markup: InlineKeyboardMarkup | None = None,
-        parse_mode: ParseMode = None):
-    
-    if chat_id_override is not None:
-        target_user_id = chat_id_override
-        bot_instance = context.bot
-    else:
-        logger.error(f"send_reminder was called with no chat_id_override.")
-        return 1
-
-    try:
-        await bot_instance.send_message(
-            chat_id = target_user_id,
-            text = content,
-            reply_markup = markup,
-            parse_mode = parse_mode
-        )
-    except Exception as e:
-        logger.error(f"Could not send reminder: {e}")
