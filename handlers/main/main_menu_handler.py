@@ -6,6 +6,7 @@ import logging
 from telegram import Update
 from telegram.error import BadRequest, Forbidden
 from telegram.ext import (
+    ApplicationHandlerStop,
     CallbackQueryHandler, 
     CommandHandler, 
     ContextTypes,
@@ -26,6 +27,29 @@ from config import VIEW_MENU, VIEW_PROF_STATE
 
 
 logger = logging.getLogger(__name__)
+
+
+# >>> Main Menu >>>
+async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    This handler, handles the main menu's appearance and behavior. 
+    """
+    user_id = update.effective_chat.id
+    user_at_hand = User(user_id)
+
+    await delete_previous_menu(update, context)
+
+    if not user_at_hand._is_a_user:
+        text = "You have not registered your timezone! You can do so tapping the /start command."
+
+        await send_new_menu(update, context, text, None)
+        raise ApplicationHandlerStop(ConversationHandler.END)
+    else:
+        text = "Here's the main menu:"
+        main_menu_markup = main_menu_keyboard()
+
+        await send_new_menu(update, context, text, main_menu_markup)
+        return VIEW_MENU
 
 
 async def close_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,21 +87,6 @@ async def view_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     del user_at_hand
     return VIEW_PROF_STATE
-
-
-# >>> Main Menu >>>
-async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """
-    This handler, handles the main menu's appearance and behavior. 
-    """
-
-    text = "Here's the main menu:"
-    main_menu_markup = main_menu_keyboard()
-
-    await delete_previous_menu(update, context)
-    await send_new_menu(update, context, text, main_menu_markup)
-
-    return VIEW_MENU
 
 
 def get_main_menu_handler() -> ConversationHandler:

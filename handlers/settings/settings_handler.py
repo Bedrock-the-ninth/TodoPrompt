@@ -6,6 +6,7 @@ from asyncio import sleep
 # TELEGRAM BOT imports ->
 from telegram import Update
 from telegram.ext import (
+    ApplicationHandlerStop,
     CallbackQueryHandler,
     CommandHandler,
     ContextTypes, 
@@ -30,22 +31,34 @@ logger = logging.getLogger(__name__)
 
 
 async def view_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = "⚙️*Here's the settings menu:*"
-    settings_markup = settings_keyboard()
 
-    if update.callback_query:
-        query = update.callback_query
-        await query.answer()
-        context.user_data['main_menu_message_id'] = query.message.message_id
+    user_id = update.effective_chat.id
+    user_at_hand = User(user_id)
 
-        await edit_previous_menu(update, context, text, settings_markup)
-    elif update.message and update.message.text.startswith('/settings'):
-        await send_new_menu(update, context, text, settings_markup)
+
+    if not user_at_hand._is_a_user:
+        text = "You have not registered your timezone! You can do so tapping the /start command."
+
+        await delete_previous_menu(update, context)
+        await send_new_menu(update, context, text, None)
+        raise ApplicationHandlerStop(ConversationHandler.END)
     else:
-        logger.warning(f"view_settings_menu called with unhandled update type for user {update.effective_chat.id}")
-        await send_new_menu(update, context, text, settings_markup)
+        text = "⚙️ Here's the settings menu:"
+        settings_markup = settings_keyboard()
 
-    return VIEW_SETTINGS
+        if update.callback_query:
+            query = update.callback_query
+            await query.answer()
+            context.user_data['main_menu_message_id'] = query.message.message_id
+
+            await edit_previous_menu(update, context, text, settings_markup)
+        elif update.message and update.message.text.startswith('/settings'):
+            await send_new_menu(update, context, text, settings_markup)
+        else:
+            logger.warning(f"view_settings_menu called with unhandled update type for user {update.effective_chat.id}")
+            await send_new_menu(update, context, text, settings_markup)
+
+        return VIEW_SETTINGS
 
 
 async def reset_timezone(update: Update, context: ContextTypes.DEFAULT_TYPE):

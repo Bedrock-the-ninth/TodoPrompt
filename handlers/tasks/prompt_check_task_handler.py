@@ -5,6 +5,7 @@ import logging
 # TELEGRAM BOT imports ->
 from telegram import Update
 from telegram.ext import (
+    ApplicationHandlerStop,
     CallbackQueryHandler, 
     CommandHandler, 
     ContextTypes,
@@ -114,24 +115,32 @@ async def mark_done_via_command(update: Update, context: ContextTypes.DEFAULT_TY
     subtasks_markup = subtasks_keyboard()
     # User instantiation
 
-    if user_input.startswith('/'):
-        user_input = user_input.replace('/mark_done ', "").strip()
-        await mark_task_done(update, context, user_id, user_input, "command")
-    else:
-        error_text_1 = "U_U  An error occured while marking your task done. Try again! Your tasks: \n"
-        
-        user_at_hand = User(user_id)
-        user_tasks_list = user_at_hand.get_user_tasks()
-        if user_tasks_list:
-            user_tasks = "\n".join(user_tasks_list)
-        else:
-            user_tasks = "\n".join("--NO TASKS ADDED YET--")
+    user_at_hand = User(user_id)
 
-        await delete_previous_menu()
-        await send_new_menu(update, context, content=(error_text_1 + user_tasks), markup=subtasks_markup)
-        
-        del user_at_hand
-        return PROMPT_CHECK_TASK_STATE
+    await delete_previous_menu(update, context)
+
+    if not user_at_hand._is_a_user:
+        text = "You have not registered your timezone! You can do so tapping the /start command."
+
+        await send_new_menu(update, context, text, None)
+        raise ApplicationHandlerStop(ConversationHandler.END)
+    else:
+        if user_input.startswith('/'):
+            user_input = user_input.replace('/mark_done ', "").strip()
+            await mark_task_done(update, context, user_id, user_input, "command")
+        else:
+            error_text_1 = "U_U  An error occured while marking your task done. Try again! Your tasks: \n"
+
+            user_tasks_list = user_at_hand.get_user_tasks()
+            if user_tasks_list:
+                user_tasks = "\n".join(user_tasks_list)
+            else:
+                user_tasks = "\n".join("--NO TASKS ADDED YET--")
+
+            await send_new_menu(update, context, content=(error_text_1 + user_tasks), markup=subtasks_markup)
+            
+            del user_at_hand
+            return PROMPT_CHECK_TASK_STATE
 
 async def mark_done_via_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id

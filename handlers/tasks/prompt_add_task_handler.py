@@ -5,6 +5,7 @@ import logging
 # TELEGRAM BOT imports ->
 from telegram import Update
 from telegram.ext import (
+    ApplicationHandlerStop,
     CallbackQueryHandler, 
     CommandHandler, 
     ContextTypes,
@@ -32,39 +33,47 @@ logger = logging.getLogger(__name__)
 async def recieve_new_task_via_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     user_input = update.message.text
-    # InlineKeyboardMarkup ->
-    tasks_markup = tasks_keyboard()
-    subtask_markup = subtasks_keyboard()
 
-    if user_input.startswith('/'):
-        new_task = user_input.strip('/add_task ').split(":")
+    user_at_hand = User(user_id)
+
+    await delete_previous_menu(update, context)
+
+    if not user_at_hand._is_a_user:
+        text = "You have not registered your timezone! You can do so tapping the /start command."
+
+        await send_new_menu(update, context, text, None)
+        raise ApplicationHandlerStop(ConversationHandler.END)
     else:
-        new_task = None
+        # InlineKeyboardMarkup ->
+        tasks_markup = tasks_keyboard()
+        subtask_markup = subtasks_keyboard()
 
-    if new_task != None:
-        user_at_hand = User(user_id)
-        result = user_at_hand.add_user_task(task = new_task[0], priority=int(new_task[1]))
-    else:
-        result = 1
+        if user_input.startswith('/'):
+            new_task = user_input.strip('/add_task ').split(":")
+        else:
+            new_task = None
 
-    if result != 0:
-        error_text_1 = "Invalid input. Try again!"
-        await delete_previous_menu(update, context)
-        await send_new_menu(update, context, error_text_1, subtask_markup)
-        
-        del user_at_hand
-        return PROMPT_ADD_TASK_STATE
-    else:
-        logger.info(f"Task {new_task[0]} for user {user_id}, was addded successfully.")
-        user_tasks = user_at_hand.get_user_tasks()
-        user_tasks_string = "\n".join(user_tasks) if user_tasks else "---NO TASKS ADDED YET---"
-        success_text_1 = f"Your task was successfully added✅\nYour tasks:\n{user_tasks_string}"
-        
-        await delete_previous_menu(update, context)
-        await send_new_menu(update, context, success_text_1, tasks_markup)
+        if new_task != None:
+            result = user_at_hand.add_user_task(task = new_task[0], priority=int(new_task[1]))
+        else:
+            result = 1
 
-        del user_at_hand
-        return ConversationHandler.END
+        if result != 0:
+            error_text_1 = "Invalid input. Try again!"
+            await send_new_menu(update, context, error_text_1, subtask_markup)
+            
+            del user_at_hand
+            return PROMPT_ADD_TASK_STATE
+        else:
+            logger.info(f"Task {new_task[0]} for user {user_id}, was addded successfully.")
+            user_tasks = user_at_hand.get_user_tasks()
+            user_tasks_string = "\n".join(user_tasks) if user_tasks else "---NO TASKS ADDED YET---"
+            success_text_1 = f"Your task was successfully added✅\nYour tasks:\n{user_tasks_string}"
+            
+            await send_new_menu(update, context, success_text_1, tasks_markup)
+
+            del user_at_hand
+            return ConversationHandler.END
 
 async def recieve_new_task_via_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id

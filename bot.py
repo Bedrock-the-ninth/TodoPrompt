@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     application = app_builder.build()
     application.job_queue.scheduler.add_jobstore(SQLAlchemyJobStore(url=f"sqlite:///{DATABASE_FILE.resolve()}"))
-    logger.info(f"Jobstores are as follows: {application.job_queue.scheduler._jobstores}")
+
 
     application.add_handlers(
         handlers = [
