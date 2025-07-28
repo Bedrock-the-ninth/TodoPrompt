@@ -1,4 +1,4 @@
-# handlers/reminders_handler.py
+# /handlers/reminders/reminders_handler.py
 
 # GENERAL PYTHON imports ->
 import logging
@@ -11,11 +11,8 @@ from telegram.ext import (
     ContextTypes, 
     ConversationHandler,
 )
-# DOMESTIC imports
-from config import (
-    VIEW_MENU, 
-    VIEW_REMINDERS_STATE, 
-)
+# LOCAL imports ->
+from config import VIEW_MENU, VIEW_REMINDERS_STATE
 from handlers.common.inline_keyboards_module import reminder_menu_keyboard
 from handlers.common.common_handlers import (
     delete_previous_menu,
@@ -23,7 +20,7 @@ from handlers.common.common_handlers import (
     return_to_menu,
     close_all_convos
 )
-from helpers.user_data_utils import User
+from helpers.user_data_util_classes.user_class import User
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +38,16 @@ async def view_reminder_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
         raise ApplicationHandlerStop(ConversationHandler.END)
     else:
 
-        info = user_at_hand.user_info()
+        info = user_at_hand._info
         # Setup for editing the reminders menu
         no_instance_text = "No reminders set just yet! You can navigate this menue " \
         "(also accessible through /reminders command) to set new ones or go to settings" \
         " (or /settings) to remove the once you've set some.  O.O\n"
         some_instances_text = "You've set the following reminders:\n"
 
-        reminder_done_state = user_at_hand.check_reminder_state('DONE', 1)
-        reminder_left_state = user_at_hand.check_reminder_state('LEFT', 1)
+        reminders = user_at_hand.reminder
+        reminder_done_state = reminders.check_reminder_state('DONE', 1)
+        reminder_left_state = reminders.check_reminder_state('LEFT', 1)
 
         flag = 0
         if (reminder_done_state != 0) and (reminder_left_state != 0):

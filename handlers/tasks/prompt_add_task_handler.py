@@ -1,4 +1,4 @@
-# handlers/prompt_add_task_handler.py
+# /handlers/tasks/prompt_add_task_handler.py
 
 # GENERAL PYTHON imports ->
 import logging
@@ -13,7 +13,8 @@ from telegram.ext import (
     filters, 
     MessageHandler   
 )
-# DOMESTIC imports ->
+# LOCAL imports ->
+from config import VIEW_TASKS_STATE, PROMPT_ADD_TASK_STATE
 from handlers.common.common_handlers import (
     close_all_convos, 
     return_to_tasks,
@@ -22,10 +23,8 @@ from handlers.common.common_handlers import (
     edit_previous_menu
 )
 from handlers.common.inline_keyboards_module import tasks_keyboard, subtasks_keyboard
-from helpers.user_data_utils import User
+from helpers.user_data_util_classes.user_class import User
 
-# State Definition for ConversationHandlers
-from config import VIEW_TASKS_STATE, PROMPT_ADD_TASK_STATE
 # Initiating logger
 logger = logging.getLogger(__name__)
 
@@ -54,7 +53,7 @@ async def recieve_new_task_via_command(update: Update, context: ContextTypes.DEF
             new_task = None
 
         if new_task != None:
-            result = user_at_hand.add_user_task(task = new_task[0], priority=int(new_task[1]))
+            result = user_at_hand.task.add_user_task(task = new_task[0], priority=int(new_task[1]))
         else:
             result = 1
 
@@ -66,7 +65,7 @@ async def recieve_new_task_via_command(update: Update, context: ContextTypes.DEF
             return PROMPT_ADD_TASK_STATE
         else:
             logger.info(f"Task {new_task[0]} for user {user_id}, was addded successfully.")
-            user_tasks = user_at_hand.get_user_tasks()
+            user_tasks = user_at_hand.task.get_user_tasks()
             user_tasks_string = "\n".join(user_tasks) if user_tasks else "---NO TASKS ADDED YET---"
             success_text_1 = f"Your task was successfully added✅\nYour tasks:\n{user_tasks_string}"
             
@@ -89,7 +88,7 @@ async def recieve_new_task_via_text(update: Update, context: ContextTypes.DEFAUL
     
     if new_task != None:
         user_at_hand = User(user_id)
-        result = user_at_hand.add_user_task(task = new_task[0], priority=int(new_task[1]))
+        result = user_at_hand.task.add_user_task(task = new_task[0], priority=int(new_task[1]))
     else:
         result = 1
 
@@ -101,7 +100,7 @@ async def recieve_new_task_via_text(update: Update, context: ContextTypes.DEFAUL
         return PROMPT_ADD_TASK_STATE
     else:
         logger.info(f"Task {new_task[0]} for user {user_id}, was addded successfully.")
-        user_tasks = user_at_hand.get_user_tasks()
+        user_tasks = user_at_hand.task.get_user_tasks()
         user_tasks_string = "\n".join(user_tasks) if user_tasks else "---NO TASKS ADDED YET---"
         success_text_1 = f"Your task was successfully added✅\nYour tasks:\n{user_tasks_string}"
         

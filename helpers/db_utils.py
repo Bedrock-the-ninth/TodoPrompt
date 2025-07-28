@@ -1,12 +1,13 @@
-import sqlite3
-from pathlib import Path
+# /helpers/db_utils.py
 
-DATA_DIR = Path("data")
-DATABASE_NAME = DATA_DIR / "database.db"
+# GENERAL PYTON imports ->
+import sqlite3
+# LOCAL imports ->
+from config import DATA_DIR, DATABASE_FILE
 
 
 def execute_query(query, params=(), fetch=False):
-    with sqlite3.connect(DATABASE_NAME) as conn:
+    with sqlite3.connect(DATABASE_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute(query, params)
         if fetch:
@@ -22,7 +23,7 @@ def execute_query(query, params=(), fetch=False):
 def db_initiator():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    with sqlite3.connect(DATABASE_NAME) as conn:
+    with sqlite3.connect(DATABASE_FILE) as conn:
         conn.executescript('''
             CREATE TABLE IF NOT EXISTS users(
                 telegram_id INTEGER UNIQUE PRIMARY KEY,

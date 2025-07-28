@@ -1,12 +1,11 @@
-# IMPORTS #
+# /bot.py
+
 # GENERAL PYTHON imports ->
 import logging
-# APScheduler imports ->
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 # TELEGRAM BOT related imports ->
 from telegram.ext import (ApplicationBuilder, PicklePersistence, JobQueue)
-# DOMESTIC Imports ->
+# LOCAL IMPORTS ->
     # Bot TOKEN import ->
 from config import TOKEN
     # Paths import ->

@@ -1,4 +1,4 @@
-# handlers/prompt_check_task_handler.py
+# /handlers/tasks/prompt_check_task_handler.py
 
 # GENERAL PYTHON imports ->
 import logging
@@ -13,7 +13,8 @@ from telegram.ext import (
     filters, 
     MessageHandler   
 )
-# DOMESTIC imports ->
+# LOCAL imports ->
+from config import VIEW_TASKS_STATE, PROMPT_CHECK_TASK_STATE
 from handlers.common.common_handlers import (
     close_all_convos, 
     return_to_tasks,
@@ -22,10 +23,8 @@ from handlers.common.common_handlers import (
     edit_previous_menu
 )
 from handlers.common.inline_keyboards_module import tasks_keyboard, subtasks_keyboard
-from helpers.user_data_utils import User
+from helpers.user_data_util_classes.user_class import User
 
-# State Definition for ConversationHandlers
-from config import VIEW_TASKS_STATE, PROMPT_CHECK_TASK_STATE
 # Initiating logger
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ async def mark_task_done(update: Update, context: ContextTypes.DEFAULT_TYPE, uid
 
     # Getting user_tasks list 
     user_at_hand = User(user_id)
-    user_task_list = user_at_hand.get_user_tasks()
+    user_task_list = user_at_hand.task.get_user_tasks()
     if user_task_list:
         user_tasks = "Your tasks are as follows:\n" + ("\n".join(user_task_list))
     else:
@@ -73,7 +72,7 @@ async def mark_task_done(update: Update, context: ContextTypes.DEFAULT_TYPE, uid
             task_to_be_marked_string : str = user_task_list[user_input]
             task_to_be_marked = task_to_be_marked_string.split('--')[1].strip()
 
-            results = user_at_hand.mark_done_and_return_new_list(task_to_be_marked)
+            results = user_at_hand.task.mark_done_and_return_new_list(task_to_be_marked)
 
             if results is None:
                 error_text_3 = "❌Failed: Updating the database failed.\n"
@@ -131,7 +130,7 @@ async def mark_done_via_command(update: Update, context: ContextTypes.DEFAULT_TY
         else:
             error_text_1 = "U_U  An error occured while marking your task done. Try again! Your tasks: \n"
 
-            user_tasks_list = user_at_hand.get_user_tasks()
+            user_tasks_list = user_at_hand.task.get_user_tasks()
             if user_tasks_list:
                 user_tasks = "\n".join(user_tasks_list)
             else:

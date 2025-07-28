@@ -1,3 +1,6 @@
+# /handlers/common/inline_keyboards_module.py
+
+# TELEGRAM BOT imports ->
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 

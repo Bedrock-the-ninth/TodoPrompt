@@ -1,19 +1,19 @@
-# handlers/common_handlers.py
+# /handlers/common/common_handlers.py
 
 # GENERAL PYTHON imports ->
 import logging
 # TELEGRAM BOT IMPORTS
-from telegram import Update, Bot, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.error import BadRequest, Forbidden
 from telegram.ext import ContextTypes, ConversationHandler
-# DOMESTIC imports ->
+# LOCAL imports ->
 from handlers.common.inline_keyboards_module import (
     main_menu_keyboard, 
     tasks_keyboard, 
     reminder_menu_keyboard
 )
-from helpers.user_data_utils import User
+from helpers.user_data_util_classes.user_class import User
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,7 @@ async def return_to_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     no_task_text = "No tasks are added yet. Try adding one by touching the button \"➕ Add\"" \
     "or through the command /add_task task:priority(1, 2 or 3). \nExample: /add_task Go shopping:2"
 
-    user_tasks = user_at_hand.get_user_tasks()
+    user_tasks = user_at_hand.task.get_user_tasks()
     if user_tasks:
         user_tasks_string = "\n".join(user_tasks)
     else:
@@ -159,6 +159,7 @@ async def return_to_reminders_menu(update: Update, context: ContextTypes.DEFAULT
 
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
+    reminders = user_at_hand.reminder
     info = user_at_hand._info
 
     if prior_main_menu != message_to_edit_id:
@@ -171,8 +172,8 @@ async def return_to_reminders_menu(update: Update, context: ContextTypes.DEFAULT
     " (or /settings) to remove the once you've set some.  O.O\n"
     some_instances_text = "You've set the following reminders:\n"
 
-    reminder_done_state = user_at_hand.check_reminder_state('DONE', 1)
-    reminder_left_state = user_at_hand.check_reminder_state('LEFT', 1)
+    reminder_done_state = reminders.check_reminder_state('DONE', 1)
+    reminder_left_state = reminders.check_reminder_state('LEFT', 1)
 
     flag = 0
     if (reminder_done_state != 0) and (reminder_left_state != 0):

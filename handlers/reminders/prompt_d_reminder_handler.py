@@ -1,4 +1,4 @@
-# handlers/prompt_d_reminder_handler.py
+# /handlers/reminders/prompt_d_reminder_handler.py
 
 # GENERAL PYTHON imports ->
 import logging
@@ -12,11 +12,8 @@ from telegram.ext import (
     MessageHandler,
     filters
 )
-# DOMESTIC imports
-from config import ( 
-    VIEW_REMINDERS_STATE, 
-    PROMPT_D_REMINDER_STATE
-)
+# LOCAL imports
+from config import VIEW_REMINDERS_STATE, PROMPT_D_REMINDER_STATE
 from handlers.common.inline_keyboards_module import reminder_menu_keyboard, sub_reminder_keyboard
 from handlers.common.common_handlers import (
     close_all_convos,
@@ -24,7 +21,7 @@ from handlers.common.common_handlers import (
     edit_previous_menu,
     return_to_reminders_menu,
 )
-from helpers.scheduler import set_user_reminder
+from helpers.scheduler.scheduler import set_user_reminder
 
 logger = logging.getLogger(__name__)
 

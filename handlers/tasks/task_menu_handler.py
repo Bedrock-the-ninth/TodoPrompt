@@ -1,4 +1,4 @@
-# handlers/task_menu_handler.py
+# /handlers/tasks/task_menu_handler.py
 
 # GENERAL PYTHON imports ->
 import logging
@@ -11,7 +11,8 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
 )
-# DOMESTIC imports ->
+# LOCAL imports ->
+from config import VIEW_MENU, VIEW_TASKS_STATE
 from handlers.common.common_handlers import (
     close_all_convos, 
     return_to_menu,
@@ -20,9 +21,7 @@ from handlers.common.common_handlers import (
     edit_previous_menu
 )
 from handlers.common.inline_keyboards_module import tasks_keyboard
-from helpers.user_data_utils import User
-# State Definition for ConversationHandlers
-from config import VIEW_MENU, VIEW_TASKS_STATE
+from helpers.user_data_util_classes.user_class import User
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,6 @@ async def view_task_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
 
     user_at_hand = User(user_id)
-    user_tasks_list = user_at_hand.get_user_tasks()
     
 
     if not user_at_hand._is_a_user:
@@ -44,6 +42,7 @@ async def view_task_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         raise ApplicationHandlerStop(ConversationHandler.END)
     else:
+        user_tasks_list = user_at_hand.task.get_user_tasks()
         if user_tasks_list:
             user_tasks = "\n".join(user_tasks_list)
         else:

@@ -1,10 +1,9 @@
-# handlers/main_menu_handlers.py
+# /handlers/main/main_menu_handlers.py
 
 # GENERAL PYTHON imports ->
 import logging
 # TELEGRAM BOT imports ->
 from telegram import Update
-from telegram.error import BadRequest, Forbidden
 from telegram.ext import (
     ApplicationHandlerStop,
     CallbackQueryHandler, 
@@ -12,7 +11,8 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler, 
 )
-# DOMESTIC imports ->
+# LOCAL imports ->
+from config import VIEW_MENU, VIEW_PROF_STATE
 from handlers.common.common_handlers import (
     close_all_convos, 
     return_to_menu, 
@@ -20,10 +20,8 @@ from handlers.common.common_handlers import (
     send_new_menu, 
     edit_previous_menu
 )
-from helpers.user_data_utils import User
 from handlers.common.inline_keyboards_module import main_menu_keyboard, profile_menu_keyboard
-# STATE imports ->
-from config import VIEW_MENU, VIEW_PROF_STATE
+from helpers.user_data_util_classes.user_class import User
 
 
 logger = logging.getLogger(__name__)

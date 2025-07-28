@@ -1,8 +1,7 @@
-# handlers/settings/settings_handler.py
+# /handlers/settings/settings_handler.py
 
 # GENERAL PYTHON imports ->
 import logging
-from asyncio import sleep
 # TELEGRAM BOT imports ->
 from telegram import Update
 from telegram.ext import (
@@ -14,7 +13,7 @@ from telegram.ext import (
     filters,
     MessageHandler
 )
-# DOMESTIC imports ->
+# LOCAL imports ->
 from config import VIEW_MENU, VIEW_SETTINGS, RESET_TIMEZONE
 from handlers.common.common_handlers import (
     send_new_menu,
@@ -25,7 +24,7 @@ from handlers.common.common_handlers import (
 )
 from handlers.common.inline_keyboards_module import settings_keyboard, sub_settings_keyboard
 from helpers.scheduler import unset_user_reminder
-from helpers.user_data_utils import User
+from helpers.user_data_util_classes.user_class import User
 
 logger = logging.getLogger(__name__)
 

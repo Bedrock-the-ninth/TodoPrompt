@@ -1,4 +1,4 @@
-# handlers/prompt_remove_task_handler.py
+# /handlers/tasks/prompt_remove_task_handler.py
 
 # GENERAL PYTHON imports ->
 import logging
@@ -14,7 +14,8 @@ from telegram.ext import (
     filters, 
     MessageHandler   
 )
-# DOMESTIC imports ->
+# LOCAL imports ->
+from config import VIEW_TASKS_STATE, PROMPT_REMOVE_TASK_STATE
 from handlers.common.common_handlers import (
     close_all_convos, 
     return_to_tasks,
@@ -22,10 +23,8 @@ from handlers.common.common_handlers import (
     edit_previous_menu
 )
 from handlers.common.inline_keyboards_module import tasks_keyboard, subtasks_keyboard
-from helpers.user_data_utils import User
+from helpers.user_data_util_classes.user_class import User
 
-# State Definition for ConversationHandlers
-from config import VIEW_TASKS_STATE, PROMPT_REMOVE_TASK_STATE
 # Initiating logger
 logging = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ async def prompt_remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE)
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
 
-    user_tasks = user_at_hand.get_user_tasks()
+    user_tasks = user_at_hand.task.get_user_tasks()
     if user_tasks:
         user_tasks_string = "\n".join(user_tasks) 
     else:
@@ -67,7 +66,7 @@ async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     user_at_hand = User(user_id)
 
-    user_tasks = user_at_hand.get_user_tasks()
+    user_tasks = user_at_hand.task.get_user_tasks()
     if user_tasks:
         user_tasks_string = "\n".join(user_tasks) 
     else:
@@ -103,12 +102,12 @@ async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
             to_be_removed_string: str = user_tasks[user_input]
             to_be_removed_task =  to_be_removed_string.split('--')[1].strip()
 
-            result = user_at_hand.remove_user_task(to_be_removed_task)
+            result = user_at_hand.task.remove_user_task(to_be_removed_task)
 
             if result == 0:
                 logging.info(f"Task `{to_be_removed_task}` was successfully removed for user {user_id}")
                 
-                refetch_list = user_at_hand.get_user_tasks()
+                refetch_list = user_at_hand.task.get_user_tasks()
                 if refetch_list:
                     refetch_string = "\n".join(refetch_list) 
                 else:

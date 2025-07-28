@@ -1,21 +1,27 @@
+# /helpers/scheduler/send_reminder_message.py
+
+# GENERAL PYTHON imports ->
+import logging
+# TELEGRAM BOT imports
 from telegram import Bot
 from telegram.helpers import escape_markdown
-import logging
-from helpers.user_data_utils import User
+# LOCAL IMPORTS
+from helpers.user_data_util_classes.user_class import User
 from config import TOKEN
 
 logger = logging.getLogger(__name__)
 
 def determine_message(user_id: int, reminder_type: str):
     user_at_hand = User(user_id)
-    user_tasks = user_at_hand.get_user_tasks()
+    user_tasks = user_at_hand.task.get_user_tasks()
+    info = user_at_hand._info
 
     if reminder_type == 'DONE':
         reminder_content = escape_markdown(f"🎉 Your achievement reminder for today! Here's your summary:\n\n", version=2)
         if not user_tasks:
             reminder_content += escape_markdown(f"No tasks were logged today! Try adding some new ones.", version=2)
         else:
-            tasks_done_count = f"{user_at_hand._info.get('todays_tasks_done', 0)} / {user_at_hand._info.get('todays_tasks', "NaN")}"
+            tasks_done_count = f"{info.get('todays_tasks_done', 0)} / {info.get('todays_tasks', "NaN")}"
             tasks_done_list = [task for task in user_tasks if "✅" in task]
             reminder_content += escape_markdown(f"You have completed *{tasks_done_count}* tasks so far today:", version=2)
             reminder_content += "\n".join([escape_markdown(s, version=2) for s in tasks_done_list])
