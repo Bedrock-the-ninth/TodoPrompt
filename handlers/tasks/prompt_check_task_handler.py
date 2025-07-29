@@ -142,8 +142,8 @@ async def mark_done_via_command(update: Update, context: ContextTypes.DEFAULT_TY
 
             await send_new_menu(update, context, content=(error_text_1 + user_tasks), markup=subtasks_markup)
             
-            del user_at_hand
-            return PROMPT_CHECK_TASK_STATE
+        del user_at_hand
+        return ConversationHandler.END
 
 async def mark_done_via_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
