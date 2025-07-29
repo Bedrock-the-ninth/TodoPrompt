@@ -31,7 +31,7 @@ class TaskManager:
         query = (
             "SELECT * FROM tasks "
             "WHERE (user_id = ? AND (created_at LIKE ?)) "
-            "ORDER BY priority ASC,created_at ASC "
+            "ORDER BY priority DESC, created_at ASC "
         )
         try:
             today_tasks = execute_query(query, (self._uid, date), True)
