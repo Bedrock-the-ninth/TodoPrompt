@@ -113,7 +113,7 @@ async def remove_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     refetch_string = "\n".join("---NO TASKS ADDED YET---")
 
-                success_string = "\n*✅Your task was removed successfully. If you wish you can remove another (assuming there are still tasks to remove.)*" + refetch_string
+                success_string = "*✅Your task was removed successfully. If you wish you can remove another (assuming there are still tasks to remove.)*\n" + refetch_string
                 task_menu_markup = tasks_keyboard()
 
                 await edit_previous_menu(update, context, success_string, task_menu_markup)

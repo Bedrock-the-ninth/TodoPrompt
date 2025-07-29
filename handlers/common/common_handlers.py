@@ -134,18 +134,14 @@ async def return_to_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     "or through the command /add_task task:priority(1, 2 or 3). \nExample: /add_task Go shopping:2"
 
     user_tasks = user_at_hand.task.get_user_tasks()
-    if user_tasks:
-        user_tasks_string = "\n".join(user_tasks)
-    else:
-        user_tasks_string = "\n".join("--NO TASKS ADDED YET--")
-
-    final_task_string = f"Tasks:\n{user_tasks_string}"
     tasks_markup = tasks_keyboard()
 
-    if user_tasks_string:
-        await edit_previous_menu(update, context, no_task_text, tasks_markup)
+    if not user_tasks:
+        user_tasks_string = "\n".join("--NO TASKS ADDED YET--")
+        await edit_previous_menu(update, context, f"Tasks:\n{user_tasks_string}", tasks_markup)
     else:
-        await edit_previous_menu(update, context, final_task_string, tasks_markup)
+        user_tasks_string = "\n".join(user_tasks)
+        await edit_previous_menu(update, context, f"Tasks:\n{user_tasks_string}", tasks_markup)
     
     del user_at_hand
     return ConversationHandler.END
