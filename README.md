@@ -1,6 +1,5 @@
 # TodoPrompt Telegram Bot
-## Video Demo: <https://drive.google.com/file/d/1M_2i4dt4UH_umUXYGPKxSrAjFcEsPd9U/view?usp=sharing>
-### Description: TodoPrompt Telegram Bot
+## Description: TodoPrompt Telegram Bot
 At first I was aiming for a Flask orientet web-application for daily use of couples. However, somewhat 20% into the project, I figured that is one of the programmes I want to build, but also a programme that I want to use exclusively. Therefore, it was not a project for public need or desire. This project, on the other hand, is one that I had not seen likes of on Telegram community and thought to myself __"Hey, a free todo list with which you can interact through Telegram, would be as useful as it is uncommon."__
 
 So I began working on it two weeks ago, at first building the infrastructure for communication with the database and learning the basics of the `ConversationHandler` object. After completion of task_handlers, I tended to modularizing the project. Then, after a short rest, I devloped the Scheduler logic and scheduler module. During this process I also tried to debug the existing features and gain more feedback from people around me who could use the bot. Thereafter it was a smooth process of error and trial with different components of the Bot one problem seemd to presist. `SQLAlchemyJobStore` could not connect to the `JobQueue` and when it did, it did not store jobs to be triggered properly. Now with those out of the way the bot is fully functional.
