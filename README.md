@@ -1,0 +1,16 @@
+# TodoPrompt Telegram Bot
+## Video Demo: <https://drive.google.com/file/d/1M_2i4dt4UH_umUXYGPKxSrAjFcEsPd9U/view?usp=sharing>
+### Description: TodoPrompt Telegram Bot
+At first I was aiming for a Flask orientet web-application for daily use of couples. However, somewhat 20% into the project, I figured that is one of the programmes I want to build, but also a programme that I want to use exclusively. Therefore, it was not a project for public need or desire. This project, on the other hand, is one that I had not seen likes of on Telegram community and thought to myself __"Hey, a free todo list with which you can interact through Telegram, would be as useful as it is uncommon."__
+
+So I began working on it two weeks ago, at first building the infrastructure for communication with the database and learning the basics of the `ConversationHandler` object. After completion of task_handlers, I tended to modularizing the project. Then, after a short rest, I devloped the Scheduler logic and scheduler module. During this process I also tried to debug the existing features and gain more feedback from people around me who could use the bot. Thereafter it was a smooth process of error and trial with different components of the Bot one problem seemd to presist. `SQLAlchemyJobStore` could not connect to the `JobQueue` and when it did, it did not store jobs to be triggered properly. Now with those out of the way the bot is fully functional.
+
+The bot consists of 4 major components;
+1. `/bot.py` and `/config.py`. The latter, is used for global variables and paths needed in various files. The former, however, brings the functionality of all parts ---with the help of python-telegram-bot modules---together by assigning the handlers to the app builder and running a polling and incoming and outgoing requests to Telegram's API.
+2. `/handlers/` directory, contains all the `ConversationHandler` instances tailored for the bot. Also the `/handlers/common/` directory within, contains handlers that are commonly used by all the components and are extracted into this folder to avoid an infinite loop.
+3. `/helpers/` directory, at first only held some helper functionality such as adding/removing tasks from the database, but as the app grew, so did the files within. 
+    - `/helpers/user_data_util_classes/` directory consists of `TaskManager`, `ReminderManager`, `TimeManager` which are modules that help build the main module `User` within the `./user_module.py`. These modules hold the prominent role of interacting with the DB by creating a class of `User` with all the required methods. 
+    - `/helpers/scheduler/` contains the scheduler logic that sets a trigger (and a trigger time) on the standalone `./send_reminder_message.py` function (`set_user_reminder`). Also a function is included to `unset_user_reminder` when required.
+4. `/data/` directory, holds within, the `database.db` and `bot_data.pickle` files. The SQL file, has 3 tables that are changed mannualy by the bot's logic and 1 table that is managed automatically by the APScheduler and `/helpers/scheduler/scheduler.py` module.
+
+I hope that the community finds this project useful for personal use. I would be happy to hear from custom implementations. Made with <3.
