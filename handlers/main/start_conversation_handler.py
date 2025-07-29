@@ -26,7 +26,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not user_at_hand._is_a_user:
         await context.bot.send_message(chat_id=user_id,
-                                       text="Welcome to TaskPrompt! Please enter your IANA timezone (e.g. \"Asia/Tehran\" or \"Europe/Berlin\").")
+                                       text="Welcome to TodoPrompt Bot! Please enter your IANA timezone (e.g. \"Asia/Tehran\" or \"Europe/Berlin\").")
         return GET_TIMEZONE_STATE
     else:
         await context.bot.send_message(chat_id=user_id, text="Tap /menu to use my functionalities.")
