@@ -35,25 +35,17 @@ logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     # Initiate the DB
-    helpers.db_initiator()
-    persistence = PicklePersistence(filepath=PERSISTENCE_FILE)
+    helpers.db_initiator() # Initiating database schema if it doesn't exist.
+    persistence = PicklePersistence(filepath=PERSISTENCE_FILE) # Clean object presistence store
 
-    # Defining jobstore for APScheduler ->
-    job_stores_config = {
-        'default': {
-            'type': 'sqlalchemy',
-            'url': f'sqlite:///{DATABASE_FILE.resolve()}'
-        }
-    }
-
+    # NOTE:
+    # Dividing the application and the build process allows for a more logical
+    # flow of things especially the main_menu and setup_convo assignment.
+    # This change was suggested by Gemini.
     ptb_job_queue = JobQueue()
-    """
-    Dividing the application and the build process allows for a more logical
-    flow of things especially the main_menu and setup_convo assignment.
-    This change was suggested by Gemini.
-    """
     app_builder = ApplicationBuilder().token(TOKEN).persistence(persistence).job_queue(ptb_job_queue)
 
+    # --- Handler Assignments ---
     setup_convo = get_setup_conversation_handler()
     main_menu = get_main_menu_handler()
     task_menu = get_task_menu_handler()
@@ -65,11 +57,19 @@ if __name__ == "__main__":
     prompt_d_reminder = get_prompt_d_reminder_handler()
     prompt_l_reminder = get_prompt_l_reminder_handler()
 
-
+    # --- App Build and Jobstore Setup ---
     application = app_builder.build()
+
+    # Workaround for Jobstore Connection to Database
+    job_stores_config = {
+        'default': {
+            'type': 'sqlalchemy',
+            'url': f'sqlite:///{DATABASE_FILE.resolve()}'
+        }
+    }
     application.job_queue.scheduler.add_jobstore(SQLAlchemyJobStore(url=f"sqlite:///{DATABASE_FILE.resolve()}"))
 
-
+    # --- Putting Assigned Handlers to Use ---
     application.add_handlers(
         handlers = [
             setup_convo, 

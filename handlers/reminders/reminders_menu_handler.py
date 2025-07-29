@@ -13,14 +13,14 @@ from telegram.ext import (
 )
 # LOCAL imports ->
 from config import VIEW_MENU, VIEW_REMINDERS_STATE
-from handlers.common.inline_keyboards_module import reminder_menu_keyboard
+from handlers.common.inline_keyboard_handlers import reminder_menu_keyboard
 from handlers.common.common_handlers import (
     delete_previous_menu,
     send_new_menu,
     return_to_menu,
     close_all_convos
 )
-from helpers.user_data_util_classes.user_class import User
+from helpers.user_data_util_classes.user_module import User
 
 logger = logging.getLogger(__name__)
 

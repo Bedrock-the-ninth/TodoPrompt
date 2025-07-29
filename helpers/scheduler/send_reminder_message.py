@@ -6,12 +6,22 @@ import logging
 from telegram import Bot
 from telegram.helpers import escape_markdown
 # LOCAL IMPORTS
-from helpers.user_data_util_classes.user_class import User
+from helpers.user_data_util_classes.user_module import User
 from config import TOKEN
 
 logger = logging.getLogger(__name__)
 
-def determine_message(user_id: int, reminder_type: str):
+def determine_message(user_id: int, reminder_type: str) -> str:
+    """Based on reminder_type ('DONE' or 'LEFT') and user's tasks \
+    this function creates the proper reminder message text.
+
+    Args:
+        user_id (int): Telegram user id
+        reminder_type (str): 'DONE' or 'LEFT'
+
+    Returns:
+        str: Proper reminder message content
+    """
     user_at_hand = User(user_id)
     user_tasks = user_at_hand.task.get_user_tasks()
     info = user_at_hand._info
@@ -41,7 +51,14 @@ def determine_message(user_id: int, reminder_type: str):
     return reminder_content
 
 
-async def send_reminder_runner(user_id, reminder_type):
+async def send_reminder_runner(user_id: int, reminder_type: str):
+    """This function instantiates a telegram Bot object (standalone) \
+    and sends a message when triggered by the scheduler logic and APScheduler.
+
+    Args:
+        user_id (int): Telegram user id
+        reminder_type (str): 'DONE' or 'LEFT'
+    """
     bot = Bot(token=TOKEN)
     reminder_content = determine_message(user_id, reminder_type)
 

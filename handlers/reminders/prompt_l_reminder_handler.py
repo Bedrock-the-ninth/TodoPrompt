@@ -14,7 +14,7 @@ from telegram.ext import (
 )
 # LOCAL imports
 from config import VIEW_REMINDERS_STATE, PROMPT_L_REMINDER_STATE
-from handlers.common.inline_keyboards_module import reminder_menu_keyboard, sub_reminder_keyboard
+from handlers.common.inline_keyboard_handlers import reminder_menu_keyboard, sub_reminder_keyboard
 from handlers.common.common_handlers import (
     close_all_convos,
     delete_previous_menu,

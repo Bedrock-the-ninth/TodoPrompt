@@ -22,9 +22,9 @@ from handlers.common.common_handlers import (
     return_to_menu, 
     close_all_convos
 )
-from handlers.common.inline_keyboards_module import settings_keyboard, sub_settings_keyboard
-from helpers.scheduler import unset_user_reminder
-from helpers.user_data_util_classes.user_class import User
+from handlers.common.inline_keyboard_handlers import settings_keyboard, sub_settings_keyboard
+from helpers.scheduler.scheduler import unset_user_reminder
+from helpers.user_data_util_classes.user_module import User
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ async def reset_timezone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_at_hand = User(user_id)
     user_input = update.message.text
 
-    if not user_at_hand.is_timezone_valid(user_input):
+    if not user_at_hand.time.is_timezone_valid(user_input):
         text = "Doens't look like a valid IANA timezone. You could search for country's IANA and retry."
         sub_settings_markup = sub_settings_keyboard()
         await edit_previous_menu(update, context, text, sub_settings_markup)

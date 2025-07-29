@@ -22,8 +22,8 @@ from handlers.common.common_handlers import (
     send_new_menu,
     edit_previous_menu
 )
-from handlers.common.inline_keyboards_module import tasks_keyboard, subtasks_keyboard
-from helpers.user_data_util_classes.user_class import User
+from handlers.common.inline_keyboard_handlers import tasks_keyboard, subtasks_keyboard
+from helpers.user_data_util_classes.user_module import User
 
 # Initiating logger
 logger = logging.getLogger(__name__)
@@ -61,8 +61,7 @@ async def recieve_new_task_via_command(update: Update, context: ContextTypes.DEF
             error_text_1 = "Invalid input. Try again!"
             await send_new_menu(update, context, error_text_1, subtask_markup)
             
-            del user_at_hand
-            return PROMPT_ADD_TASK_STATE
+
         else:
             logger.info(f"Task {new_task[0]} for user {user_id}, was addded successfully.")
             user_tasks = user_at_hand.task.get_user_tasks()
@@ -71,8 +70,8 @@ async def recieve_new_task_via_command(update: Update, context: ContextTypes.DEF
             
             await send_new_menu(update, context, success_text_1, tasks_markup)
 
-            del user_at_hand
-            return ConversationHandler.END
+        del user_at_hand
+        return ConversationHandler.END
 
 async def recieve_new_task_via_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id

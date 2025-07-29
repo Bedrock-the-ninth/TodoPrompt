@@ -13,7 +13,7 @@ from telegram.ext import (
 )
 # LOCAL imports ->
 from config import GET_TIMEZONE_STATE
-from helpers.user_data_util_classes.user_class import User
+from helpers.user_data_util_classes.user_module import User
 
 # Enable logger
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ async def get_timezone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_at_hand = User(user_id)
     user_input = update.message.text
 
-    if not user_at_hand.is_timezone_valid(user_input):
+    if not user_at_hand.time.is_timezone_valid(user_input):
         await context.bot.send_message(chat_id=user_id,
                                        text="Doens't look like a valid IANA timezone. You could search for country's IANA and retry.")
         return GET_TIMEZONE_STATE

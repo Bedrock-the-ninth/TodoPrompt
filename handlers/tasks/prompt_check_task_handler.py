@@ -22,8 +22,8 @@ from handlers.common.common_handlers import (
     send_new_menu,
     edit_previous_menu
 )
-from handlers.common.inline_keyboards_module import tasks_keyboard, subtasks_keyboard
-from helpers.user_data_util_classes.user_class import User
+from handlers.common.inline_keyboard_handlers import tasks_keyboard, subtasks_keyboard
+from helpers.user_data_util_classes.user_module import User
 
 # Initiating logger
 logger = logging.getLogger(__name__)
@@ -52,10 +52,11 @@ async def mark_task_done(update: Update, context: ContextTypes.DEFAULT_TYPE, uid
         logger.info(error_text_1)
         if query_type == "text":
             await edit_previous_menu(update=update, context=context, content=(error_text_1 + user_tasks), markup=tasks_markup)
+            return PROMPT_CHECK_TASK_STATE
         elif query_type == "command":
             await delete_previous_menu(update, context)
             await send_new_menu(update, context, content=(error_text_1 + user_tasks), markup=tasks_markup)
-        return PROMPT_CHECK_TASK_STATE
+            return ConversationHandler.END
     else:
         if not (0 <= user_input < len(user_task_list)):
             error_text_2 = "❌Failed: The integer user entered is out of range.\n"
@@ -63,10 +64,11 @@ async def mark_task_done(update: Update, context: ContextTypes.DEFAULT_TYPE, uid
             logger.info(error_text_2)
             if query_type == "text":
                 await edit_previous_menu(update=update, context=context, content=(error_text_2 + user_tasks), markup=tasks_markup)
+                return PROMPT_CHECK_TASK_STATE
             elif query_type == "command":
                 await delete_previous_menu(update, context)
                 await send_new_menu(update, context, content=(error_text_2 + user_tasks), markup=tasks_markup)
-            return PROMPT_CHECK_TASK_STATE
+                return ConversationHandler.END
         
         else:
             task_to_be_marked_string : str = user_task_list[user_input]
@@ -80,10 +82,11 @@ async def mark_task_done(update: Update, context: ContextTypes.DEFAULT_TYPE, uid
                 logger.info(error_text_3)
                 if query_type == "text":
                     await edit_previous_menu(update=update, context=context, content=(error_text_3 + user_tasks), markup=tasks_markup)
+                    return PROMPT_CHECK_TASK_STATE
                 elif query_type == "command":
                     await delete_previous_menu(update, context)
                     await send_new_menu(update, context, content=(error_text_3 + user_tasks), markup=tasks_markup)
-                return PROMPT_CHECK_TASK_STATE
+                    return ConversationHandler.END
             
             elif results == 1:
                 error_text_4 = "❌Failed: Couldn't retreive the tasklist.\n"
@@ -91,10 +94,11 @@ async def mark_task_done(update: Update, context: ContextTypes.DEFAULT_TYPE, uid
                 logger.info(error_text_4)
                 if query_type == "text":
                     await edit_previous_menu(update=update, context=context, content=(error_text_4 + user_tasks), markup=tasks_markup)
+                    return PROMPT_CHECK_TASK_STATE
                 elif query_type == "command":
                     await delete_previous_menu(update, context)
                     await send_new_menu(update, context, content=(error_text_4 + user_tasks), markup=tasks_markup)
-                return PROMPT_CHECK_TASK_STATE
+                    return ConversationHandler.END
             
             else:
                 success_text = "^_-  Success: Task was marked done."

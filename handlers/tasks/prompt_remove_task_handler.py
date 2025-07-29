@@ -22,8 +22,8 @@ from handlers.common.common_handlers import (
     delete_previous_menu,
     edit_previous_menu
 )
-from handlers.common.inline_keyboards_module import tasks_keyboard, subtasks_keyboard
-from helpers.user_data_util_classes.user_class import User
+from handlers.common.inline_keyboard_handlers import tasks_keyboard, subtasks_keyboard
+from helpers.user_data_util_classes.user_module import User
 
 # Initiating logger
 logging = logging.getLogger(__name__)

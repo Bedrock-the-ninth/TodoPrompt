@@ -20,8 +20,8 @@ from handlers.common.common_handlers import (
     send_new_menu, 
     edit_previous_menu
 )
-from handlers.common.inline_keyboards_module import main_menu_keyboard, profile_menu_keyboard
-from helpers.user_data_util_classes.user_class import User
+from handlers.common.inline_keyboard_handlers import main_menu_keyboard, profile_menu_keyboard
+from helpers.user_data_util_classes.user_module import User
 
 
 logger = logging.getLogger(__name__)

@@ -8,12 +8,12 @@ from telegram.constants import ParseMode
 from telegram.error import BadRequest, Forbidden
 from telegram.ext import ContextTypes, ConversationHandler
 # LOCAL imports ->
-from handlers.common.inline_keyboards_module import (
+from handlers.common.inline_keyboard_handlers import (
     main_menu_keyboard, 
     tasks_keyboard, 
     reminder_menu_keyboard
 )
-from helpers.user_data_util_classes.user_class import User
+from helpers.user_data_util_classes.user_module import User
 
 logger = logging.getLogger(__name__)
 
